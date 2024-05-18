@@ -106,8 +106,8 @@
 		   padding)))
     (when (< width 0)
       (user-error "Horizonal padding must be less than width"))
-    (plist-put box :content (grid--reformat-content content width))
-    (plist-put box :length (length (plist-get box :content)))))
+    (setq box (plist-put box :content (grid--reformat-content content width)))
+    (setq box (plist-put box :length (length (plist-get box :content))))))
 
 (defun grid--normalize-row (row)
   "Normalize ROW."
@@ -148,7 +148,7 @@
       (and donep (grid--apply-invisible-hbox line)))
     (insert line)
     (insert-char ?  grid-margin)
-    (plist-put box :content new-content)))
+    (setq box (plist-put box :content new-content))))
 
 ;;; API
 
