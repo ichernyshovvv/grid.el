@@ -5,7 +5,7 @@
 ;; Author: Ilya Chernyshov <ichernyshovvv@gmail.com>
 ;; Version: 0.1
 ;; Package-Requires: ((emacs "29.1"))
-;; Keywords: layout
+;; Keywords: tools, docs, layout
 ;; URL: https://github.com/ichernyshovvv/grid
 
 ;;; License:
@@ -28,7 +28,7 @@
 ;; USAGE:
 ;; (grid-insert-content '(ROW ROW ...))
 ;; ROW: '(BOX BOX ...)
-;; BOX: plist. Acceptable properties:
+;; BOX: plist.  Acceptable properties:
 
 ;;   :border
 ;;   nil or t
@@ -47,32 +47,38 @@
 (defvar grid-margin 1)
 
 (defun grid-row-empty-p (row)
+  "Check whether ROW is empty."
   (seq-every-p
    (lambda (x) (string-empty-p (plist-get x :content)))
    row))
 
 (defun grid--apply-vertical-borders (string)
+  "Apply horizontal `line-width' face property to STRING."
   (add-face-text-property
    0 (length string)
    '((t (:box (:line-width (1 . 0)))))
    t string))
 
 (defun grid--apply-overline (string)
+  "Apply `overline' face property to STRING."
   (add-face-text-property 0 (length string) '((t (:overline t))) t string))
 
 (defun grid--apply-underline (string)
+  "Apply `underline' face property to STRING."
   (add-face-text-property
    0 (length string)
    '((t (:underline ( :color foreground-color :style line :position -3))))
    t string))
 
 (defun grid--apply-invisible-hbox (string)
+  "Apply invisible horizontal space to STRING."
   (add-face-text-property
    0 (length string)
    `((t (:box (:line-width (1 . 0) :color ,(face-background 'default)))))
    t string))
 
 (defun grid--normalize-width (width)
+  "Normalize WIDTH."
   (if (stringp width)
       (floor
        (* (window-width)
@@ -80,6 +86,7 @@
     width))
 
 (defun grid--reformat-content (content width)
+  "Reformat CONTENT for a box with width WIDTH."
   (let (indent-tabs-mode)
     (with-temp-buffer
       (insert content)
@@ -91,6 +98,7 @@
       (buffer-string))))
 
 (defun grid--normalize-box (box)
+  "Normalize BOX."
   (let* ((content (plist-get box :content))
 	 (padding (* (or (plist-get box :padding) 0) 2))
 	 (width (- (grid--normalize-width
@@ -102,15 +110,18 @@
     (plist-put box :length (length (plist-get box :content)))))
 
 (defun grid--normalize-row (row)
+  "Normalize ROW."
   (mapc #'grid--normalize-box row))
 
 (defun grid--insert-row (row)
+  "Insert ROW in the current buffer."
   (while (not (grid-row-empty-p row))
     (mapc #'grid--insert-box row)
     (insert "\n"))
   (insert "\n"))
 
 (defun grid--insert-box (box)
+  "Insert BOX in the current buffer."
   (let* ((content (plist-get box :content))
 	 (content-len (length content))
 	 (padding-len (or (plist-get box :padding) 0))
@@ -142,10 +153,12 @@
 ;;; API
 
 (defun grid-insert-row (row)
+  "Insert ROW in the current buffer."
   (grid--normalize-row row)
   (grid--insert-row row))
 
 (defun grid-insert-content (rows)
+  "Insert ROWS in the current buffer."
   (mapc #'grid-insert-row rows))
 
 (provide 'grid)
