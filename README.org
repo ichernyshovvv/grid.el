@@ -1,0 +1,16 @@
+#+html: <h2 align=center>grid.el</h2>
+
+A snippet from grid-examples.el. Evaluate it in a buffer at the first character
+of some line:
+
+#+begin_src elisp
+(grid-insert-content
+ `(((:content ,grid-multiline-str :width 10 :border t :padding 1)
+    (:content ,grid-lipsum-2 :width "33%" :padding 2)
+    (:content ,grid-lipsum :width "33%" :padding 3))
+   ((:content ,grid-multiline-str :width "49%" :border t :padding 1)
+    (:content ,grid-lipsum :width "49%" :border t :padding 10))))
+#+end_src
+
+Result:
+#+html: <div align=center><img src='image.png'>
