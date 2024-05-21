@@ -3,7 +3,7 @@
 ;; Copyright (C) 2024  Ilya Chernyshov
 
 ;; Author: Ilya Chernyshov <ichernyshovvv@gmail.com>
-;; Version: 0.1
+;; Version: 0.1-pre
 ;; Package-Requires: ((emacs "29.1"))
 ;; Keywords: tools, docs, layout
 ;; URL: https://github.com/ichernyshovvv/grid
@@ -98,8 +98,9 @@
       (buffer-string))))
 
 (defun grid--normalize-box (box)
-  "Normalize BOX."
-  (let* ((content (plist-get box :content))
+  "Return a normalized copy of BOX."
+  (let* ((box (copy-tree box))
+	 (content (plist-get box :content))
 	 (padding (* (or (plist-get box :padding) 0) 2))
 	 (width (- (grid--normalize-width
 		    (plist-get box :width))
@@ -110,8 +111,8 @@
     (setq box (plist-put box :length (length (plist-get box :content))))))
 
 (defun grid--normalize-row (row)
-  "Normalize ROW."
-  (mapc #'grid--normalize-box row))
+  "Return a normalized copy of ROW."
+  (mapcar #'grid--normalize-box row))
 
 (defun grid--insert-row (row)
   "Insert ROW in the current buffer."
@@ -154,8 +155,7 @@
 
 (defun grid-insert-row (row)
   "Insert ROW in the current buffer."
-  (grid--normalize-row row)
-  (grid--insert-row row))
+  (grid--insert-row (grid--normalize-row row)))
 
 (defun grid-insert-content (rows)
   "Insert ROWS in the current buffer."
