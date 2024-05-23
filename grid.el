@@ -85,16 +85,29 @@
 	  (/ (string-to-number width) 100.0)))
     width))
 
-(defun grid--reformat-content (content width)
+(defun grid--reformat-content (content width align)
   "Reformat CONTENT for a box with width WIDTH."
-  (let (indent-tabs-mode)
+  (let (indent-tabs-mode prev-pos)
     (with-temp-buffer
-      (insert content)
+      (insert content "\n")
       (goto-char (point-min))
+      (setq prev-pos (point))
       (while (re-search-forward "\n" nil t)
 	(replace-match " ")
-	(insert-char ?  (- width (% (match-beginning 0)
-				    width))))
+	(let ((left (- width (% (match-beginning 0) width))))
+	  (pcase align
+	    ((or `nil `left)
+	     (insert-char ?  left))
+	    (`right
+	     (save-excursion
+	       (goto-char prev-pos)
+	       (insert-char ?  left)))
+	    (`center
+	     (save-excursion
+	       (goto-char prev-pos)
+	       (insert-char ?  (ceiling left 2)))
+	     (insert-char ?  (ceiling left 2)))))
+	(setq prev-pos (point)))
       (buffer-string))))
 
 (defun grid--normalize-box (box)
@@ -103,6 +116,7 @@
 		((pred plistp) (copy-tree box))
 		((pred stringp) (list :content box))))
 	 (content (plist-get box :content))
+	 (align (plist-get box :align))
 	 (padding (* (or (plist-get box :padding) 0) 2))
 	 (width-raw
 	  (or
@@ -115,7 +129,7 @@
 	 (width (- (grid--normalize-width width-raw) padding)))
     (when (< width 0)
       (user-error "Horizonal padding must be less than width"))
-    (setq box (plist-put box :content (grid--reformat-content content width)))
+    (setq box (plist-put box :content (grid--reformat-content content width align)))
     (setq box (plist-put box :length (length (plist-get box :content))))
     box))
 

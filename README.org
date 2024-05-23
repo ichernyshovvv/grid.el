@@ -90,6 +90,11 @@ BOX formats:
 
   Optional:
     
+    :align
+    center
+    left (default)
+    right
+    
     :width
     "50%"
     integer (number of characters)

@@ -39,3 +39,10 @@ Nam libero tempore, cum soluta nobis est eligendi optio cumque nihil impedit quo
 
 (grid-insert-row
  `(,grid-lipsum ,grid-calendar))
+
+(grid-insert-row
+ `((:content ,grid-multiline-str :width 30 :border t :align center)
+   (:content ,grid-lipsum :width 20 :border t)))
+
+(grid-insert-box `( :content ,grid-multiline-str
+		    :width 50 :border t :align center))
