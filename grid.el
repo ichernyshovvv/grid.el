@@ -157,6 +157,14 @@
   "Insert ROW in the current buffer."
   (grid--insert-row (grid--normalize-row row)))
 
+(defun grid-insert-column (column)
+  "Insert COLUMN in the current buffer."
+  (grid-insert-content (mapcar #'list column)))
+
+(defun grid-get-column (column)
+  "Return COLUMN as a string."
+  (grid-get-content (mapcar #'list column)))
+
 (defun grid-insert-content (rows)
   "Insert ROWS in the current buffer."
   (mapc #'grid-insert-row rows))
