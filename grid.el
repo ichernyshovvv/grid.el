@@ -46,11 +46,9 @@
 
 (defvar grid-margin 1)
 
-(defun grid-row-empty-p (row)
-  "Check whether ROW is empty."
-  (seq-every-p
-   (lambda (x) (string-empty-p (plist-get x :content)))
-   row))
+(defun grid-content-empty-p (box)
+  "Non-nil if content of BOX is empty."
+  (string-empty-p (plist-get box :content)))
 
 (defun grid--apply-vertical-borders (string)
   "Apply horizontal `line-width' face property to STRING."
@@ -133,13 +131,9 @@
     (setq box (plist-put box :length (length (plist-get box :content))))
     box))
 
-(defun grid--normalize-row (row)
-  "Return a normalized copy of ROW."
-  (mapcar #'grid--normalize-box row))
-
 (defun grid--insert-row (row)
   "Insert ROW in the current buffer."
-  (while (not (grid-row-empty-p row))
+  (while (not (seq-every-p #'grid-content-empty-p row))
     (mapc #'grid--insert-box row)
     (insert "\n"))
   (insert "\n"))
@@ -186,7 +180,7 @@
 
 (defun grid-insert-row (row)
   "Insert ROW in the current buffer."
-  (grid--insert-row (grid--normalize-row row)))
+  (grid--insert-row (mapcar #'grid--normalize-box row)))
 
 (defun grid-insert-column (column)
   "Insert COLUMN in the current buffer."
