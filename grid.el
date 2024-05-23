@@ -163,7 +163,7 @@
 
 (defun grid-get-column (column)
   "Return COLUMN as a string."
-  (grid-get-content (mapcar #'list column)))
+  (grid-get-rows (mapcar #'list column)))
 
 (defun grid-insert-rows (rows)
   "Insert ROWS in the current buffer."
@@ -175,7 +175,7 @@
     (grid-insert-row row)
     (buffer-string)))
 
-(defun grid-get-content (rows)
+(defun grid-get-rows (rows)
   "Return ROWS as a string."
   (with-temp-buffer
     (grid-insert-rows rows)
