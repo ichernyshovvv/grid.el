@@ -99,7 +99,9 @@
 
 (defun grid--normalize-box (box)
   "Return a normalized copy of BOX."
-  (let* ((box (copy-tree box))
+  (let* ((box (pcase box
+		((pred plistp) (copy-tree box))
+		((pred stringp) (list :content box))))
 	 (content (plist-get box :content))
 	 (padding (* (or (plist-get box :padding) 0) 2))
 	 (width-raw

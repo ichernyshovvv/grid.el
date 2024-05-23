@@ -36,3 +36,6 @@ Nam libero tempore, cum soluta nobis est eligendi optio cumque nihil impedit quo
 (grid-insert-row
  `((:content ,grid-multiline-str :width "49%" :border t :padding 1)
    (:content ,grid-lipsum :width "49%" :border t :padding 10)))
+
+(grid-insert-row
+ `(,grid-lipsum ,grid-calendar))

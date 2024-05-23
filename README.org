@@ -79,7 +79,12 @@ Result:
 - ~grid-get-row~
 - ~grid-get-rows~
 
-BOX: plist.  Properties:
+BOX formats:
+
+- string. In that case the width of the box will be equal to the longest line in
+  the string.
+
+- plist. Properties:
 
   :content - string to be inserted in the box
 
