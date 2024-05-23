@@ -26,7 +26,7 @@
 ;;; Commentary:
 
 ;; USAGE:
-;; (grid-insert-content '(ROW ROW ...))
+;; (grid-insert-rows '(ROW ROW ...))
 ;; ROW: '(BOX BOX ...)
 ;; BOX: plist.  Acceptable properties:
 
@@ -159,13 +159,13 @@
 
 (defun grid-insert-column (column)
   "Insert COLUMN in the current buffer."
-  (grid-insert-content (mapcar #'list column)))
+  (grid-insert-rows (mapcar #'list column)))
 
 (defun grid-get-column (column)
   "Return COLUMN as a string."
   (grid-get-content (mapcar #'list column)))
 
-(defun grid-insert-content (rows)
+(defun grid-insert-rows (rows)
   "Insert ROWS in the current buffer."
   (mapc #'grid-insert-row rows))
 
@@ -178,7 +178,7 @@
 (defun grid-get-content (rows)
   "Return ROWS as a string."
   (with-temp-buffer
-    (grid-insert-content rows)
+    (grid-insert-rows rows)
     (buffer-string)))
 
 (provide 'grid)

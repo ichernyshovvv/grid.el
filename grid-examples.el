@@ -23,14 +23,14 @@ laboris nisi ut aliquip ex ea commodo consequat.")
 
 Nam libero tempore, cum soluta nobis est eligendi optio cumque nihil impedit quo minus id quod maxime placeat facere possimus, omnis voluptas assumenda est, omnis dolor repellendus.")
 
-(grid-insert-content
+(grid-insert-rows
  `(((:content ,grid-multiline-str :width 10 :border t :padding 1)
     (:content ,grid-lipsum-2 :width "33%" :padding 2)
     (:content ,grid-lipsum :width "33%" :padding 3))
    ((:content ,grid-multiline-str :width "49%" :border t :padding 1)
     (:content ,grid-lipsum :width "49%" :border t :padding 10))))
 
-(grid-insert-content
+(grid-insert-rows
  `(((:content ,grid-multiline-str :width 10 :border t :padding 2))))
 
 (grid-insert-row
