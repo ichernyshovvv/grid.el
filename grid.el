@@ -52,30 +52,25 @@
   "Non-nil if content of BOX is empty."
   (string-empty-p (plist-get box :content)))
 
-(defun grid--apply-vertical-borders (string)
-  "Apply horizontal `line-width' face property to STRING."
+(defvar grid-overline '((t (:overline t)))
+  "Overline face.")
+
+(defvar grid-underline
+  '((t (:underline ( :color foreground-color :style line :position -3))))
+  "Underline face.")
+
+(defvar grid-vertical-borders '((t (:box (:line-width (1 . 0)))))
+  "Vertical borders face.")
+
+(defvar grid-invisible-box
+  `((t (:box ( :line-width (1 . 0) :color ,(face-background 'default)))))
+  "Invisible box face.")
+
+(defun grid--apply-face (string face)
+  "Apply FACE to STRING."
   (add-face-text-property
    0 (length string)
-   '((t (:box (:line-width (1 . 0)))))
-   t string))
-
-(defun grid--apply-overline (string)
-  "Apply `overline' face property to STRING."
-  (add-face-text-property 0 (length string) '((t (:overline t))) t string))
-
-(defun grid--apply-underline (string)
-  "Apply `underline' face property to STRING."
-  (add-face-text-property
-   0 (length string)
-   '((t (:underline ( :color foreground-color :style line :position -3))))
-   t string))
-
-(defun grid--apply-invisible-hbox (string)
-  "Apply invisible horizontal space to STRING."
-  (add-face-text-property
-   0 (length string)
-   `((t (:box (:line-width (1 . 0) :color ,(face-background 'default)))))
-   t string))
+   face t string))
 
 (defun grid--normalize-width (width)
   "Normalize WIDTH."
@@ -161,18 +156,25 @@
 		       (format (format "%% -%ds" width)
 			       (substring content 0 line-len))
 		       padding))
-	 (first-line-p
-	  (= (plist-get box :length)
-	     content-len))
-	 (in-body-p (/= content-len 0))
 	 (donep (string-empty-p content))
-	 (new-content (substring content line-len))
-	 (last-line-p (and (not donep) (string-empty-p new-content))))
+	 (new-content (substring content line-len)))
     (when (plist-get box :border)
-      (and first-line-p (grid--apply-overline line))
-      (and in-body-p (grid--apply-vertical-borders line))
-      (and last-line-p (grid--apply-underline line))
-      (and donep (grid--apply-invisible-hbox line)))
+      (let ((faces (list
+		    ;; first line?
+		    (and (= (plist-get box :length)
+			    content-len)
+			 grid-overline)
+		    ;; in body?
+		    (and (/= content-len 0)
+			 grid-vertical-borders)
+		    ;; last line?
+		    (and (and (not donep) (string-empty-p new-content))
+			 grid-underline)
+		    (and donep grid-invisible-box))))
+	(thread-last
+	  faces
+	  (remove nil)
+	  (mapc (apply-partially #'grid--apply-face line)))))
     (insert line)
     (insert-char ?  grid-margin)
     (setq box (plist-put box :content new-content))))
