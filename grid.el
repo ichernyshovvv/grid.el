@@ -139,6 +139,7 @@
   "Insert ROW in the current buffer."
   (while (not (seq-every-p #'grid-content-empty-p row))
     (mapc #'grid--insert-box row)
+    (delete-char (* grid-margin -1))
     (insert ?\n))
   (insert ?\n))
 
