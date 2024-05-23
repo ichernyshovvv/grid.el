@@ -40,7 +40,7 @@ text:
 #+end_src
 
 Result:
-#+html: <div align=center><img src='image-with-light-dashboard.png'>
+#+html: <div align=center><img src='image-with-light-dashboard.png'></div>
 
 * API
 :PROPERTIES:
