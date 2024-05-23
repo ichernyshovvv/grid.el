@@ -135,8 +135,8 @@
   "Insert ROW in the current buffer."
   (while (not (seq-every-p #'grid-content-empty-p row))
     (mapc #'grid--insert-box row)
-    (insert "\n"))
-  (insert "\n"))
+    (insert ?\n))
+  (insert ?\n))
 
 (defun grid--insert-box (box)
   "Insert BOX in the current buffer."
