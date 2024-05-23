@@ -44,6 +44,8 @@
 
 ;;; Code:
 
+(require 'subr-x)
+
 (defvar grid-margin 1)
 
 (defun grid-content-empty-p (box)
@@ -108,6 +110,15 @@
 	(setq prev-pos (point)))
       (buffer-string))))
 
+(defun grid--longest-line-length (string)
+  "Get the length of the longest line in STRING."
+  (let ((lines (split-string string "\n")))
+    (thread-last lines
+		 (seq-map #'length)
+		 (seq-max)
+		 ;; FIX
+		 (+ 2))))
+
 (defun grid--normalize-box (box)
   "Return a normalized copy of BOX."
   (let* ((box (pcase box
@@ -119,9 +130,7 @@
 	 (width-raw
 	  (or
 	   (plist-get box :width)
-	   (let ((width
-		  ;; FIX
-		  (+ (apply #'max (mapcar #'length (split-string content "\n"))) 2)))
+	   (let ((width (grid--longest-line-length content)))
 	     (setq box (plist-put box :width width))
 	     width)))
 	 (width (- (grid--normalize-width width-raw) padding)))
