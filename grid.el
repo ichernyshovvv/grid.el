@@ -81,28 +81,13 @@
     width))
 
 (defun grid--reformat-content (content width align)
-  "Reformat CONTENT for a box with width WIDTH and align it accoring to ALIGN."
-  (let (indent-tabs-mode prev-pos)
+  "Reformat CONTENT for a box with WIDTH and align it accoring to ALIGN."
+  (let (indent-tabs-mode)
     (with-temp-buffer
-      (insert content "\n")
+      (setq fill-column width)
+      (insert content)
       (goto-char (point-min))
-      (setq prev-pos (point))
-      (while (re-search-forward "\n" nil t)
-	(replace-match " ")
-	(let ((left (- width (% (match-beginning 0) width))))
-	  (pcase align
-	    ((or `nil `left)
-	     (insert-char ?  left))
-	    (`right
-	     (save-excursion
-	       (goto-char prev-pos)
-	       (insert-char ?  left)))
-	    (`center
-	     (save-excursion
-	       (goto-char prev-pos)
-	       (insert-char ?  (ceiling left 2)))
-	     (insert-char ?  (ceiling left 2)))))
-	(setq prev-pos (point)))
+      (grid--align-lines align)
       (buffer-string))))
 
 (defun grid--longest-line-length (string)
@@ -110,9 +95,7 @@
   (let ((lines (split-string string "\n")))
     (thread-last lines
 		 (seq-map #'length)
-		 (seq-max)
-		 ;; FIX
-		 (+ 2))))
+		 (seq-max))))
 
 (defun grid--normalize-box (box)
   "Return a normalized copy of BOX."
@@ -131,6 +114,7 @@
 	 (width (- (grid--normalize-width width-raw) padding)))
     (when (< width 0)
       (user-error "Horizonal padding must be less than width"))
+    (setq box (plist-put box :width width))
     (setq box (plist-put box :content (grid--reformat-content content width align)))
     (setq box (plist-put box :length (length (plist-get box :content))))
     box))
@@ -149,16 +133,17 @@
 	 (content-len (length content))
 	 (padding-len (or (plist-get box :padding) 0))
 	 (padding (make-string padding-len ? ))
-	 (width (- (grid--normalize-width
-		    (plist-get box :width))
-		   (* padding-len 2)))
-	 (line-len (min content-len width))
-	 (line (concat padding
-		       (format (format "%% -%ds" width)
-			       (substring content 0 line-len))
-		       padding))
+	 (width (plist-get box :width))
+	 (line-len (min width content-len))
+	 (line
+	  (concat
+	   padding
+	   (format (format "%% -%ds" width)
+		   (substring content 0 line-len))
+	   padding))
 	 (donep (string-empty-p content))
-	 (new-content (substring content line-len)))
+	 (new-content (substring content
+				 (min content-len (1+ width)))))
     (when (plist-get box :border)
       (let ((faces (list
 		    ;; first line?
@@ -179,6 +164,36 @@
     (insert line)
     (insert-char ?  grid-margin)
     (setq box (plist-put box :content new-content))))
+
+(defun grid--align-lines (align)
+  "Align lines in the current buffer with ALIGN.
+ALIGN values: `left' (default), `right', `center', `full'."
+  (interactive "P")
+  (let (space)
+    (while (not (eobp))
+      (beginning-of-line)
+      (delete-horizontal-space)
+      (end-of-line)
+      (delete-horizontal-space)
+      (setq space (- fill-column (current-column)))
+      (if (< space 0)
+	  (let ((beg (line-beginning-position)))
+	    (fill-region (line-beginning-position)
+			 (line-end-position) align)
+	    (goto-char beg))
+	(pcase align
+	  (`center
+	   (beginning-of-line)
+	   (insert-char ?  (ceiling space 2))
+	   (end-of-line)
+	   (insert-char ?  (floor space 2)))
+	  ((or `nil `left)
+	   (end-of-line)
+	   (insert-char ?  space))
+	  (`right
+	   (beginning-of-line)
+	   (insert-char ?  space)))
+	(forward-line 1)))))
 
 ;;; API
 
