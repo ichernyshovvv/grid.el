@@ -1,5 +1,15 @@
 #+html: <h2 align=center>grid.el</h2>
 
+* Contents
+
+- [[#description][Description]]
+- [[#api][API]]
+
+* Description
+:PROPERTIES:
+:CUSTOM_ID: description
+:END:
+
 This library allows you to put text data into boxes and align them horizontally,
 applying margin, padding, borders.
 
@@ -31,3 +41,51 @@ text:
 
 Result:
 #+html: <div align=center><img src='image-with-light-dashboard.png'>
+
+* API
+:PROPERTIES:
+:CUSTOM_ID: api
+:END:
+
+- ~grid-insert-rows~
+
+#+begin_src elisp
+(grid-insert-rows '(ROW ROW ...))
+;; ROW: '(BOX BOX ...)
+#+end_src
+
+- ~grid-insert-row~
+
+#+begin_src elisp
+(grid-insert-row ROW)
+;; ROW: '(BOX BOX ...)
+#+end_src
+
+- ~grid-insert-column~
+
+#+begin_src elisp
+(grid-insert-column COLUMN)
+;; COLUMN: '(BOX BOX ...)
+#+end_src
+
+- ~grid-get-column~
+- ~grid-get-row~
+- ~grid-get-rows~
+
+BOX: plist.  Properties:
+
+  :width
+  "50%"
+  integer (number of characters)
+
+  :content - string to be inserted in the box
+
+  Optional:
+
+    :border
+    nil or t
+
+    :padding - horizontal padding
+    integer (number of characters)
+
+  
