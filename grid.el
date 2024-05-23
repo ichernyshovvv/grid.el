@@ -86,7 +86,7 @@
     width))
 
 (defun grid--reformat-content (content width align)
-  "Reformat CONTENT for a box with width WIDTH."
+  "Reformat CONTENT for a box with width WIDTH and align it accoring to ALIGN."
   (let (indent-tabs-mode prev-pos)
     (with-temp-buffer
       (insert content "\n")
@@ -177,9 +177,11 @@
 ;;; API
 
 (defun grid-insert-box (box)
+  "Insert BOX in the current buffer."
   (grid-insert-row (list box)))
 
 (defun grid-get-box (box)
+  "Return BOX as a string."
   (grid-get-row (list box)))
 
 (defun grid-insert-row (row)
