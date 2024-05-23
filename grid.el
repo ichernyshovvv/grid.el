@@ -161,6 +161,18 @@
   "Insert ROWS in the current buffer."
   (mapc #'grid-insert-row rows))
 
+(defun grid-get-row (row)
+  "Return ROW as a string."
+  (with-temp-buffer
+    (grid-insert-row row)
+    (buffer-string)))
+
+(defun grid-get-content (rows)
+  "Return ROWS as a string."
+  (with-temp-buffer
+    (grid-insert-content rows)
+    (buffer-string)))
+
 (provide 'grid)
 
 ;;; grid.el ends here
