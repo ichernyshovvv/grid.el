@@ -102,13 +102,20 @@
   (let* ((box (copy-tree box))
 	 (content (plist-get box :content))
 	 (padding (* (or (plist-get box :padding) 0) 2))
-	 (width (- (grid--normalize-width
-		    (plist-get box :width))
-		   padding)))
+	 (width-raw
+	  (or
+	   (plist-get box :width)
+	   (let ((width
+		  ;; FIX
+		  (+ (apply #'max (mapcar #'length (split-string content "\n"))) 2)))
+	     (setq box (plist-put box :width width))
+	     width)))
+	 (width (- (grid--normalize-width width-raw) padding)))
     (when (< width 0)
       (user-error "Horizonal padding must be less than width"))
     (setq box (plist-put box :content (grid--reformat-content content width)))
-    (setq box (plist-put box :length (length (plist-get box :content))))))
+    (setq box (plist-put box :length (length (plist-get box :content))))
+    box))
 
 (defun grid--normalize-row (row)
   "Return a normalized copy of ROW."
