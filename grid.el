@@ -153,6 +153,12 @@
 
 ;;; API
 
+(defun grid-insert-box (box)
+  (grid-insert-row (list box)))
+
+(defun grid-get-box (box)
+  (grid-get-row (list box)))
+
 (defun grid-insert-row (row)
   "Insert ROW in the current buffer."
   (grid--insert-row (grid--normalize-row row)))

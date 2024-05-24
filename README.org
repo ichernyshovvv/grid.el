@@ -47,6 +47,12 @@ Result:
 :CUSTOM_ID: api
 :END:
 
+- ~grid-insert-box~
+
+#+begin_src elisp
+(grid-insert-box BOX)
+#+end_src
+
 - ~grid-insert-rows~
 
 #+begin_src elisp
@@ -68,6 +74,7 @@ Result:
 ;; COLUMN: '(BOX BOX ...)
 #+end_src
 
+- ~grid-get-box~
 - ~grid-get-column~
 - ~grid-get-row~
 - ~grid-get-rows~
