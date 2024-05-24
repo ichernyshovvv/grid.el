@@ -56,12 +56,8 @@
 
 (defvar grid-underline '(:underline (:position -3)) "Underline face.")
 
-(defvar grid-vertical-borders '(:box (:line-width (1 . 0)))
+(defvar grid-vertical-borders '(:box (:line-width (-1 . 0)))
   "Vertical borders face.")
-
-(defvar grid-invisible-box
-  `(:box ( :line-width (1 . 0) :color ,(face-background 'default)))
-  "Invisible box face.")
 
 (defun grid--apply-face (string face)
   "Apply FACE to STRING."
@@ -150,9 +146,7 @@
 	 ;; in body?
 	 (and (/= content-len 0) grid-vertical-borders)
 	 ;; last line?
-	 (and (not donep) (string-empty-p new-content) grid-underline)
-	 ;; done drawing the box with borders?
-	 (and donep grid-invisible-box))))
+	 (and (not donep) (string-empty-p new-content) grid-underline))))
     (insert line)
     (insert-char ?  grid-margin)
     (setq box (plist-put box :content new-content))))
