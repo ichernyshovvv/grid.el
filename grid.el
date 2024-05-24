@@ -52,22 +52,20 @@
   "Non-nil if content of BOX is empty."
   (string-empty-p (plist-get box :content)))
 
-(defvar grid-overline '((t (:overline t)))
-  "Overline face.")
+(defvar grid-overline '(:overline t) "Overline face.")
 
-(defvar grid-underline
-  '((t (:underline ( :color foreground-color :style line :position -3))))
-  "Underline face.")
+(defvar grid-underline '(:underline (:position -3)) "Underline face.")
 
-(defvar grid-vertical-borders '((t (:box (:line-width (1 . 0)))))
+(defvar grid-vertical-borders '(:box (:line-width (1 . 0)))
   "Vertical borders face.")
 
 (defvar grid-invisible-box
-  `((t (:box ( :line-width (1 . 0) :color ,(face-background 'default)))))
+  `(:box ( :line-width (1 . 0) :color ,(face-background 'default)))
   "Invisible box face.")
 
 (defun grid--apply-face (string face)
   "Apply FACE to STRING."
+  (declare (indent 1))
   (add-face-text-property
    0 (length string)
    face t string))
@@ -145,22 +143,16 @@
 	 (new-content (substring content
 				 (min content-len (1+ width)))))
     (when (plist-get box :border)
-      (let ((faces (list
-		    ;; first line?
-		    (and (= (plist-get box :length)
-			    content-len)
-			 grid-overline)
-		    ;; in body?
-		    (and (/= content-len 0)
-			 grid-vertical-borders)
-		    ;; last line?
-		    (and (and (not donep) (string-empty-p new-content))
-			 grid-underline)
-		    (and donep grid-invisible-box))))
-	(thread-last
-	  faces
-	  (remove nil)
-	  (mapc (apply-partially #'grid--apply-face line)))))
+      (grid--apply-face line
+	(append
+	 ;; first line?
+	 (and (= (plist-get box :length) content-len) grid-overline)
+	 ;; in body?
+	 (and (/= content-len 0) grid-vertical-borders)
+	 ;; last line?
+	 (and (not donep) (string-empty-p new-content) grid-underline)
+	 ;; done drawing the box with borders?
+	 (and donep grid-invisible-box))))
     (insert line)
     (insert-char ?  grid-margin)
     (setq box (plist-put box :content new-content))))
