@@ -76,8 +76,9 @@
 
 (defun grid--reformat-content (content width align)
   "Reformat CONTENT for a box with WIDTH and align it accoring to ALIGN."
-  (let (indent-tabs-mode)
-    (with-temp-buffer
+  (let (indent-tabs-mode sentence-end-double-space)
+    (with-current-buffer (get-buffer-create " *grid-fill*")
+      (erase-buffer)
       (setq fill-column width)
       (insert content)
       (goto-char (point-min))
@@ -151,35 +152,47 @@
     (insert-char ?  grid-margin)
     (setq box (plist-put box :content new-content))))
 
+(defsubst grid--trim-line ()
+  (beginning-of-line)
+  (delete-horizontal-space)
+  (end-of-line)
+  (delete-horizontal-space))
+
+(defsubst grid--align-line (align space)
+  (pcase align
+    (`center
+     (beginning-of-line)
+     (insert-char ?  (ceiling space 2))
+     (end-of-line)
+     (insert-char ?  (floor space 2)))
+    ((or `nil `left)
+     (end-of-line)
+     (insert-char ?  space))
+    (`right
+     (beginning-of-line)
+     (insert-char ?  space))))
+
 (defun grid--align-lines (align)
   "Align lines in the current buffer with ALIGN.
 ALIGN values: `left' (default), `right', `center', `full'."
   (interactive "P")
   (let (space)
     (while (not (eobp))
-      (beginning-of-line)
-      (delete-horizontal-space)
-      (end-of-line)
-      (delete-horizontal-space)
+      (grid--trim-line)
       (setq space (- fill-column (current-column)))
-      (if (< space 0)
-	  (let ((beg (line-beginning-position)))
-	    (fill-region (line-beginning-position)
-			 (line-end-position) align)
-	    (goto-char beg))
-	(pcase align
-	  (`center
-	   (beginning-of-line)
-	   (insert-char ?  (ceiling space 2))
-	   (end-of-line)
-	   (insert-char ?  (floor space 2)))
-	  ((or `nil `left)
-	   (end-of-line)
-	   (insert-char ?  space))
-	  (`right
-	   (beginning-of-line)
-	   (insert-char ?  space)))
-	(forward-line 1)))))
+      (if (>= space 0)
+	  (grid--align-line align space)
+	(let ((beg (line-beginning-position)))
+	  (fill-region beg (line-end-position) align)
+	  (goto-char beg)
+	  (grid--trim-line)
+	  (setq space (- fill-column (current-column)))
+	  (when (< space 0)
+	    (forward-char space)
+	    (insert ?\n)
+	    (setq space (+ fill-column space)))
+	  (grid--align-line align space)))
+      (forward-line 1))))
 
 ;;; API
 
