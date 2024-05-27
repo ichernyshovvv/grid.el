@@ -45,6 +45,7 @@
 ;;; Code:
 
 (require 'subr-x)
+(require 'map)
 
 (defvar grid-margin 1)
 
@@ -92,27 +93,36 @@
       (seq-map #'length)
       (seq-max))))
 
+(defalias #'grid--merge-plists
+  (apply-partially #'map-merge-with 'plist (lambda (_ x) x))
+  "Merge plists, the last one takes precedence.")
+
+(defun grid--fill-box (box)
+  "Calculate and fill in the missing fields in BOX."
+  ;; `map-let' doesn't provide access to keywords directly
+  (map-let ((:content content)
+            (:align align)
+            (:padding padding)
+            (:width width))
+      box
+    (let* ((padding (* (or padding 0) 2))
+           (width-raw (or width (grid--longest-line-length content)))
+           (width (- (grid--normalize-width width-raw) padding))
+           (content (grid--reformat-content content width align))
+           (box-extra (list :width width
+                            :content content
+                            :length (length content))))
+      (when (< width 0)
+        (user-error "Horizonal padding %s must be less than width %s"
+                    padding width-raw))
+      (grid--merge-plists box box-extra))))
+
 (defun grid--normalize-box (box)
-  "Return a normalized copy of BOX."
-  (let* ((box (pcase box
-                ((pred plistp) (copy-tree box))
-                ((pred stringp) (list :content box))))
-         (content (plist-get box :content))
-         (align (plist-get box :align))
-         (padding (* (or (plist-get box :padding) 0) 2))
-         (width-raw
-          (or
-           (plist-get box :width)
-           (let ((width (grid--longest-line-length content)))
-             (setq box (plist-put box :width width))
-             width)))
-         (width (- (grid--normalize-width width-raw) padding)))
-    (when (< width 0)
-      (user-error "Horizonal padding must be less than width"))
-    (setq box (plist-put box :width width))
-    (setq box (plist-put box :content (grid--reformat-content content width align)))
-    (setq box (plist-put box :length (length (plist-get box :content))))
-    box))
+  "Normalize BOX to plist."
+  (cond
+   ((plistp box) (copy-tree box))
+   ((stringp box) (list :content box))))
+
 
 (defun grid--insert-row (row)
   "Insert ROW in the current buffer."
@@ -207,7 +217,10 @@ ALIGN values: `left' (default), `right', `center', `full'."
 
 (defun grid-insert-row (row)
   "Insert ROW in the current buffer."
-  (grid--insert-row (mapcar #'grid--normalize-box row)))
+  (grid--insert-row
+   (mapcar (lambda (box)
+             (grid--fill-box (grid--normalize-box box)))
+           row)))
 
 (defun grid-insert-column (column)
   "Insert COLUMN in the current buffer."
