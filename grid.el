@@ -88,10 +88,9 @@
 
 (defun grid--longest-line-length (string)
   "Get the length of the longest line in STRING."
-  (let ((lines (split-string string "\n")))
-    (thread-last lines
-      (seq-map #'length)
-      (seq-max))))
+  (thread-last (split-string string "\n")
+    (seq-map #'length)
+    (seq-max)))
 
 (defalias #'grid--merge-plists
   (apply-partially #'map-merge-with 'plist (lambda (_ x) x))
@@ -123,15 +122,6 @@
    ((plistp box) (copy-tree box))
    ((stringp box) (list :content box))))
 
-
-(defun grid--insert-row (row)
-  "Insert ROW in the current buffer."
-  (while (not (seq-every-p #'grid-content-empty-p row))
-    (mapc #'grid--insert-box row)
-    (delete-char (* grid-margin -1))
-    (insert ?\n))
-  (insert ?\n))
-
 (defun grid--insert-box (box)
   "Insert BOX in the current buffer."
   (let* ((content (plist-get box :content))
@@ -161,6 +151,14 @@
     (insert line)
     (insert-char ?  grid-margin)
     (setq box (plist-put box :content new-content))))
+
+(defun grid--insert-row (row)
+  "Insert ROW in the current buffer."
+  (while (not (seq-every-p #'grid-content-empty-p row))
+    (mapc #'grid--insert-box row)
+    (delete-char (* grid-margin -1))
+    (insert ?\n))
+  (insert ?\n))
 
 (defsubst grid--trim-line ()
   (beginning-of-line)
