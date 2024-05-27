@@ -49,9 +49,9 @@
 
 (defvar grid-margin 1)
 
-(defun grid-content-empty-p (box)
+(defun grid-content-not-empty-p (box)
   "Non-nil if content of BOX is empty."
-  (string-empty-p (plist-get box :content)))
+  (not (string-empty-p (plist-get box :content))))
 
 (defvar grid-overline '(:overline t) "Overline face.")
 
@@ -122,7 +122,7 @@
    ((plistp box) (copy-tree box))
    ((stringp box) (list :content box))))
 
-(defun grid--insert-box (box)
+(defun grid--format-box (box)
   "Insert BOX in the current buffer."
   (map-let ((:content content)
             (:padding padding)
@@ -137,27 +137,29 @@
            (line-len (min width content-len))
            (fmt (format "%s%% -%ds%s" padding width padding))
            (line (format fmt (substring content 0 line-len)))
-
            (new-content (substring content
-                                   (min content-len (1+ width)))))
+                                   (min content-len (1+ width))))
+           (donep (string-empty-p content))
+           (combined-face (append
+                           ;; first line?
+                           (and (= length content-len) grid-overline)
+                           ;; in body?
+	                       (and (/= content-len 0) grid-vertical-borders)
+	                       ;; last line?
+	                       (and (not donep)
+                                (string-empty-p new-content) grid-underline))))
       (when border
-        (let* ((donep (string-empty-p content))
-               (combined-face (append
-                               ;; first line?
-                               (and (= length content-len) grid-overline)
-                               ;; in body?
-	                           (and (/= content-len 0) grid-vertical-borders)
-	                           ;; last line?
-	                           (and (not donep) (string-empty-p new-content) grid-underline))))
-          (grid--apply-face line combined-face)))
-      (insert line)
-      (insert-char ?  grid-margin)
-      (setq box (plist-put box :content new-content)))))
+        (grid--apply-face line combined-face))
+      (setq box (plist-put box :content new-content))
+      line)))
 
 (defun grid--insert-row (row)
   "Insert ROW in the current buffer."
-  (while (not (seq-every-p #'grid-content-empty-p row))
-    (mapc #'grid--insert-box row)
+  (while (seq-some #'grid-content-not-empty-p row)
+    (mapc (lambda (box)
+            (insert (grid--format-box box))
+            (insert-char ?  grid-margin))
+          row)
     (delete-char (* grid-margin -1))
     (insert ?\n))
   (insert ?\n))
