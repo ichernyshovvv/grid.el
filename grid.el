@@ -152,13 +152,16 @@
 
 (defun grid--insert-row (row)
   "Insert ROW in the current buffer."
-  (while (seq-some #'grid-content-not-empty-p row)
-    (mapc (lambda (box)
-            (insert (grid--format-box box))
-            (insert-char ?  grid-margin))
-          row)
-    (delete-char (* grid-margin -1))
-    (insert ?\n))
+  (let ((normalized-row (seq-map (lambda (box)
+                                   (grid--fill-box (grid--normalize-box box)))
+                                 row)))
+    (while (seq-some #'grid-content-not-empty-p normalized-row)
+      (mapc (lambda (box)
+              (insert (grid--format-box box))
+              (insert-char ?  grid-margin))
+            normalized-row)
+      (delete-char (* grid-margin -1))
+      (insert ?\n)))
   (insert ?\n))
 
 (defsubst grid--trim-line ()
@@ -187,7 +190,8 @@ ALIGN values: `left' (default), `right', `center', `full'."
   (interactive "P")
   (let (space)
     (while (not (eobp))
-      (if align (grid--trim-line)
+      (if align
+          (grid--trim-line)
 	    (end-of-line))
       (setq space (- fill-column (current-column)))
       (if (>= space 0)
@@ -216,10 +220,7 @@ ALIGN values: `left' (default), `right', `center', `full'."
 
 (defun grid-insert-row (row)
   "Insert ROW in the current buffer."
-  (grid--insert-row
-   (mapcar (lambda (box)
-             (grid--fill-box (grid--normalize-box box)))
-           row)))
+  (grid--insert-row row))
 
 (defun grid-insert-column (column)
   "Insert COLUMN in the current buffer."
