@@ -71,7 +71,7 @@
   (if (stringp width)
       (floor
        (* (window-width)
-	  (/ (string-to-number width) 100.0)))
+          (/ (string-to-number width) 100.0)))
     width))
 
 (defun grid--reformat-content (content width align)
@@ -89,24 +89,24 @@
   "Get the length of the longest line in STRING."
   (let ((lines (split-string string "\n")))
     (thread-last lines
-		 (seq-map #'length)
-		 (seq-max))))
+      (seq-map #'length)
+      (seq-max))))
 
 (defun grid--normalize-box (box)
   "Return a normalized copy of BOX."
   (let* ((box (pcase box
-		((pred plistp) (copy-tree box))
-		((pred stringp) (list :content box))))
-	 (content (plist-get box :content))
-	 (align (plist-get box :align))
-	 (padding (* (or (plist-get box :padding) 0) 2))
-	 (width-raw
-	  (or
-	   (plist-get box :width)
-	   (let ((width (grid--longest-line-length content)))
-	     (setq box (plist-put box :width width))
-	     width)))
-	 (width (- (grid--normalize-width width-raw) padding)))
+                ((pred plistp) (copy-tree box))
+                ((pred stringp) (list :content box))))
+         (content (plist-get box :content))
+         (align (plist-get box :align))
+         (padding (* (or (plist-get box :padding) 0) 2))
+         (width-raw
+          (or
+           (plist-get box :width)
+           (let ((width (grid--longest-line-length content)))
+             (setq box (plist-put box :width width))
+             width)))
+         (width (- (grid--normalize-width width-raw) padding)))
     (when (< width 0)
       (user-error "Horizonal padding must be less than width"))
     (setq box (plist-put box :width width))
@@ -125,29 +125,29 @@
 (defun grid--insert-box (box)
   "Insert BOX in the current buffer."
   (let* ((content (plist-get box :content))
-	 (content-len (length content))
-	 (padding-len (or (plist-get box :padding) 0))
-	 (padding (make-string padding-len ? ))
-	 (width (plist-get box :width))
-	 (line-len (min width content-len))
-	 (line
-	  (concat
-	   padding
-	   (format (format "%% -%ds" width)
-		   (substring content 0 line-len))
-	   padding))
-	 (donep (string-empty-p content))
-	 (new-content (substring content
-				 (min content-len (1+ width)))))
+         (content-len (length content))
+         (padding-len (or (plist-get box :padding) 0))
+         (padding (make-string padding-len ? ))
+         (width (plist-get box :width))
+         (line-len (min width content-len))
+         (line
+          (concat
+           padding
+           (format (format "%% -%ds" width)
+                   (substring content 0 line-len))
+           padding))
+         (donep (string-empty-p content))
+         (new-content (substring content
+                                 (min content-len (1+ width)))))
     (when (plist-get box :border)
       (grid--apply-face line
-	(append
-	 ;; first line?
-	 (and (= (plist-get box :length) content-len) grid-overline)
-	 ;; in body?
-	 (and (/= content-len 0) grid-vertical-borders)
-	 ;; last line?
-	 (and (not donep) (string-empty-p new-content) grid-underline))))
+        (append
+         ;; first line?
+         (and (= (plist-get box :length) content-len) grid-overline)
+         ;; in body?
+	     (and (/= content-len 0) grid-vertical-borders)
+	     ;; last line?
+	     (and (not donep) (string-empty-p new-content) grid-underline))))
     (insert line)
     (insert-char ?  grid-margin)
     (setq box (plist-put box :content new-content))))
@@ -179,20 +179,20 @@ ALIGN values: `left' (default), `right', `center', `full'."
   (let (space)
     (while (not (eobp))
       (if align (grid--trim-line)
-	(end-of-line))
+	    (end-of-line))
       (setq space (- fill-column (current-column)))
       (if (>= space 0)
-	  (grid--align-line align space)
-	(let ((beg (line-beginning-position)))
-	  (fill-region beg (line-end-position) align)
-	  (goto-char beg)
-	  (grid--trim-line)
-	  (setq space (- fill-column (current-column)))
-	  (when (< space 0)
-	    (forward-char space)
-	    (insert ?\n)
-	    (setq space (+ fill-column space)))
-	  (grid--align-line align space)))
+	      (grid--align-line align space)
+	    (let ((beg (line-beginning-position)))
+	      (fill-region beg (line-end-position) align)
+	      (goto-char beg)
+	      (grid--trim-line)
+	      (setq space (- fill-column (current-column)))
+	      (when (< space 0)
+	        (forward-char space)
+	        (insert ?\n)
+	        (setq space (+ fill-column space)))
+	      (grid--align-line align space)))
       (forward-line 1))))
 
 ;;; API
