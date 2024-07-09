@@ -17,7 +17,7 @@ A snippet from grid-examples.el. Evaluate it in a buffer at the first character
 of some line:
 
 #+begin_src elisp
-(grid-insert-content
+(grid-insert-rows
  `(((:content ,grid-multiline-str :width 10 :border t :padding 1)
     (:content ,grid-lipsum-2 :width "33%" :padding 2)
     (:content ,grid-lipsum :width "33%" :padding 3))
@@ -33,7 +33,7 @@ saved. For example, this is a combination of [[https:https://github.com/ichernys
 text:
 
 #+begin_src elisp
-(grid-insert-content
+(grid-insert-rows
  `(((:content ,grid-calendar :width 24 :border t :padding 1)
     (:content ,light-dashboard-dashboard-string :width 40)
     (:content ,grid-lipsum :width 40 :border 1 :padding 1))))
