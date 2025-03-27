@@ -131,22 +131,23 @@
             (:length length))
       box
     (let* ((content-len (length content))
+           ;; isn't it filled with zero by default?
            (line-len (min width content-len))
            (padding (make-string (or padding 0) ? ))
            (fmt (format "%s%% -%ds%s" padding width padding))
            (line (format fmt (substring content 0 line-len)))
            (new-content (substring content
                                    (min content-len (1+ width))))
-           (border-face (cond
-                         ;; first line?
-                         ((= length content-len) grid-overline)
-                         ;; in body?
-	                     ((/= content-len 0) grid-vertical-borders)
-	                     ;; last line?
-	                     ((and (zerop content-len)
-                               (string-empty-p new-content)) grid-underline))))
-      (when (and border border-face)
-        (grid--apply-face line border-face))
+           (combined-face (append
+                           ;; first line?
+                           (and (= length content-len) grid-overline)
+                           ;; in body?
+	                       (and (/= content-len 0) grid-vertical-borders)
+	                       ;; last line?
+	                       (and (not (string-empty-p content))
+                                (string-empty-p new-content) grid-underline))))
+      (when (and border combined-face)
+        (grid--apply-face line combined-face))
       (setq box (plist-put box :content new-content))
       line)))
 
