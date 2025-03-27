@@ -89,8 +89,8 @@
 (defun grid--longest-line-length (string)
   "Get the length of the longest line in STRING."
   (thread-last (split-string string "\n")
-    (seq-map #'length)
-    (seq-max)))
+               (seq-map #'length)
+               (seq-max)))
 
 (defalias #'grid--merge-plists
   (apply-partially #'map-merge-with 'plist (lambda (_ x) x))
@@ -142,9 +142,9 @@
                            ;; first line?
                            (and (= length content-len) grid-overline)
                            ;; in body?
-	                       (and (/= content-len 0) grid-vertical-borders)
-	                       ;; last line?
-	                       (and (not (string-empty-p content))
+                           (and (/= content-len 0) grid-vertical-borders)
+                           ;; last line?
+                           (and (not (string-empty-p content))
                                 (string-empty-p new-content) grid-underline))))
       (when (and border combined-face)
         (grid--apply-face line combined-face))
@@ -193,20 +193,20 @@ ALIGN values: `left' (default), `right', `center', `full'."
     (while (not (eobp))
       (if align
           (grid--trim-line)
-	    (end-of-line))
+        (end-of-line))
       (setq space (- fill-column (current-column)))
       (if (>= space 0)
-	      (grid--align-line align space)
-	    (let ((beg (line-beginning-position)))
-	      (fill-region beg (line-end-position) align)
-	      (goto-char beg)
-	      (grid--trim-line)
-	      (setq space (- fill-column (current-column)))
-	      (when (< space 0)
-	        (forward-char space)
-	        (insert ?\n)
-	        (setq space (+ fill-column space)))
-	      (grid--align-line align space)))
+          (grid--align-line align space)
+        (let ((beg (line-beginning-position)))
+          (fill-region beg (line-end-position) align)
+          (goto-char beg)
+          (grid--trim-line)
+          (setq space (- fill-column (current-column)))
+          (when (< space 0)
+            (forward-char space)
+            (insert ?\n)
+            (setq space (+ fill-column space)))
+          (grid--align-line align space)))
       (forward-line 1))))
 
 ;;; API
