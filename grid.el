@@ -206,24 +206,40 @@
   (delete-horizontal-space))
 
 (defsubst grid--align-line (align space)
-  (pcase align
-    (`center
-     (beginning-of-line)
-     (insert-char ?  (ceiling space 2))
-     (end-of-line)
-     (insert-char ?  (floor space 2)))
-    ((or `nil `left)
-     (end-of-line)
-     (insert-char ?  space))
-    (`right
-     (beginning-of-line)
-     (insert-char ?  space))))
+  (let ((empty-line-p (= (current-column) 0)))
+    (pcase align
+      (`center
+       (beginning-of-line)
+       (insert-char ?  (ceiling space 2))
+       (end-of-line)
+       (insert-char ?  (floor space 2)))
+      ((or `nil `left)
+       (end-of-line)
+       (insert-char ?  space))
+      (`right
+       (beginning-of-line)
+       (insert-char ?  space)))
+    (when empty-line-p
+      (add-text-properties
+       (line-beginning-position)
+       (1+ (line-beginning-position))
+       (list 'grid-box-newline t
+             'grid-box-emptyline t
+             'grid-box-uuid (get-text-property (point-min) 'grid-box-uuid))))))
 
 (defun grid--align-lines (align)
   "Align lines in the current buffer with ALIGN.
 ALIGN values: `left' (default), `right', `center', `full'."
   (interactive "P")
   (let (space)
+    ;; mark newlines
+    (while (re-search-forward "\n" nil t)
+      (when (< (line-beginning-position) (point-max))
+        (put-text-property
+         (line-beginning-position)
+         (1+ (line-beginning-position))
+         'grid-box-newline t)))
+    (goto-char (point-min))
     (while (not (eobp))
       (if align
           (grid--trim-line)
@@ -259,11 +275,25 @@ ALIGN values: `left' (default), `right', `center', `full'."
                                      (<= (point) (line-end-position))
                                      (<= (point) end)))))
              (setq string
-                   (concat string
+                   (concat string " "
                            (buffer-substring
                             (prop-match-beginning prop)
                             (min end (prop-match-end prop))))))
-           (substring-no-properties string)))))))
+           (with-temp-buffer
+             (insert string)
+             (goto-char (point-min))
+             (while (text-property-search-forward 'grid-box-newline)
+               (backward-char 1)
+               (delete-char -1)
+               (insert-char ?\n)
+               (forward-char 1))
+             (goto-char (point-min))
+             (while (text-property-search-forward 'grid-box-emptyline)
+               (delete-char -1))
+             (remove-list-of-text-properties
+              (point-min) (point-max)
+              '(grid-box-uuid grid-box-newline))
+             (buffer-string))))))))
 
 (defun grid-redisplay--select (start end window overlay)
   "Update the overlay OVERLAY in WINDOW with FACE in range START-END."
