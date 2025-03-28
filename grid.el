@@ -290,6 +290,11 @@ ALIGN values: `left' (default), `right', `center', `full'."
              (goto-char (point-min))
              (while (text-property-search-forward 'grid-box-emptyline)
                (delete-char -1))
+             (remove-text-properties
+              (point-min) (point-max)
+              '( face grid-overline
+                 face grid-vertical-borders
+                 face grid-underline))
              (remove-list-of-text-properties
               (point-min) (point-max)
               '(grid-box-uuid grid-box-newline))
