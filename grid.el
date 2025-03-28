@@ -147,10 +147,13 @@
                ((plistp box) (copy-tree box))
                ((stringp box) (list :content box))))
          (uuid (grid--uuid)))
-    (plist-put box :uuid uuid)
-    (plist-put box :content
-               (propertize (plist-get box :content)
-                           'grid-box-uuid uuid))
+    (unless (get-text-property 0 'grid-box-uuid
+                               (plist-get box :content #'equal))
+      (plist-put box :uuid uuid #'equal)
+      (plist-put box :content
+                 (propertize (plist-get box :content)
+                             'grid-box-uuid uuid)
+                 #'equal))
     box))
 
 (defun grid--format-box (box)
