@@ -116,11 +116,42 @@
                     padding width-raw))
       (grid--merge-plists box box-extra))))
 
+(defun grid--uuid ()
+  "Return string with random (version 4) UUID."
+  ;; This is a copy of `org-id-uuid'.
+  (let ((rnd (md5 (format "%s%s%s%s%s%s%s"
+                          (random)
+                          (current-time)
+                          (user-uid)
+                          (emacs-pid)
+                          (user-full-name)
+                          user-mail-address
+                          (recent-keys)))))
+    (format "%s-%s-4%s-%s%s-%s"
+            (substring rnd 0 8)
+            (substring rnd 8 12)
+            (substring rnd 13 16)
+            (format "%x"
+                    (logior
+                     #b10000000
+                     (logand
+                      #b10111111
+                      (string-to-number
+                       (substring rnd 16 18) 16))))
+            (substring rnd 18 20)
+            (substring rnd 20 32))))
+
 (defun grid--normalize-box (box)
   "Normalize BOX to plist."
-  (cond
-   ((plistp box) (copy-tree box))
-   ((stringp box) (list :content box))))
+  (let* ((box (cond
+               ((plistp box) (copy-tree box))
+               ((stringp box) (list :content box))))
+         (uuid (grid--uuid)))
+    (plist-put box :uuid uuid)
+    (plist-put box :content
+               (propertize (plist-get box :content)
+                           'grid-box-uuid uuid))
+    box))
 
 (defun grid--format-box (box)
   "Insert BOX in the current buffer."
