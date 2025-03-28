@@ -240,6 +240,28 @@ ALIGN values: `left' (default), `right', `center', `full'."
           (grid--align-line align space)))
       (forward-line 1))))
 
+(defun grid--extract-content (arg)
+  (pcase arg
+    (`nil
+     (when-let* (((region-active-p))
+                 (start (region-beginning))
+                 (end (region-end)))
+       (save-excursion
+         (goto-char start)
+         (let ((uuid (get-text-property start 'grid-box-uuid)) prop string)
+           (while (setq prop (text-property-search-forward
+                              'grid-box-uuid t
+                              (lambda (_ uuid-at-point)
+                                (and (equal uuid uuid-at-point)
+                                     (<= (point) (line-end-position))
+                                     (<= (point) end)))))
+             (setq string
+                   (concat string
+                           (buffer-substring
+                            (prop-match-beginning prop)
+                            (min end (prop-match-end prop))))))
+           (substring-no-properties string)))))))
+
 (defun grid-redisplay--select (start end window overlay)
   "Update the overlay OVERLAY in WINDOW with FACE in range START-END."
   (if (not (overlayp overlay))
