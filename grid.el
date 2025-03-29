@@ -186,8 +186,8 @@
               (insert-char ?\s grid-margin))
             normalized-row)
       (delete-char (* grid-margin -1))
-      (insert ?\n)))
-  (insert ?\n))
+      (insert ?\n))
+    (delete-char -1)))
 
 (defsubst grid--trim-line ()
   (beginning-of-line)
@@ -343,7 +343,8 @@ ALIGN values: `left' (default), `right', `center', `full'."
 
 (defun grid-insert-row (row)
   "Insert ROW in the current buffer."
-  (grid--insert-row row))
+  (grid--insert-row row)
+  (insert ?\n))
 
 (defun grid-insert-column (column)
   "Insert COLUMN in the current buffer."
@@ -361,7 +362,7 @@ ALIGN values: `left' (default), `right', `center', `full'."
   "Return ROW as a string."
   (with-current-buffer (get-buffer-create " *grid-insert*")
     (erase-buffer)
-    (grid-insert-row row)
+    (grid--insert-row row)
     (buffer-string)))
 
 (defun grid-make-rows (rows)
