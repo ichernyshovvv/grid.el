@@ -24,25 +24,25 @@ laboris nisi ut aliquip ex ea commodo consequat.")
 Nam libero tempore, cum soluta nobis est eligendi optio cumque nihil impedit quo minus id quod maxime placeat facere possimus, omnis voluptas assumenda est, omnis dolor repellendus.")
 
 (grid-insert-rows
- `(((:content ,grid-multiline-str :width 10 :border t :padding 1)
-    (:content ,grid-lipsum-2 :width "33%" :padding 2)
-    (:content ,grid-lipsum :width "33%" :padding 3))
-   ((:content ,grid-multiline-str :width "49%" :border t :padding 1)
-    (:content ,grid-lipsum :width "49%" :border t :padding 10))))
+ `(((content ,grid-multiline-str width 10 border t padding 1)
+    (content ,grid-lipsum-2 width "33%" padding 2)
+    (content ,grid-lipsum width "33%" padding 3))
+   ((content ,grid-multiline-str width "49%" border t padding 1)
+    (content ,grid-lipsum width "49%" border t padding 10))))
 
 (grid-insert-rows
- `(((:content ,grid-multiline-str :width 10 :border t :padding 2))))
+ `(((content ,grid-multiline-str width 10 border t padding 2))))
 
 (grid-insert-row
- `((:content ,grid-multiline-str :width "49%" :border t :padding 1)
-   (:content ,grid-lipsum :width "49%" :border t :padding 10)))
+ `((content ,grid-multiline-str width "49%" border t padding 1)
+   (content ,grid-lipsum width "49%" border t padding 10)))
 
 (grid-insert-row
  `(,grid-lipsum ,grid-calendar))
 
 (grid-insert-row
- `((:content ,grid-multiline-str :width 30 :border t :align center)
-   (:content ,grid-lipsum :width 20 :border t)))
+ `((content ,grid-multiline-str width 30 border t align center)
+   (content ,grid-lipsum width 20 border t)))
 
-(grid-insert-box `( :content ,grid-multiline-str
-		    :width 50 :border t :align center))
+(grid-insert-box `( content ,grid-multiline-str
+		    width 50 border t align center))

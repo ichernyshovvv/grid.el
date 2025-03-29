@@ -30,17 +30,17 @@
 ;; ROW: '(BOX BOX ...)
 ;; BOX: plist.  Acceptable properties:
 
-;;   :border
+;;   border
 ;;   nil or t
 
-;;   :width
+;;   width
 ;;   "50%"
 ;;   integer (number of characters)
 
-;;   :padding - horizontal padding
+;;   padding - horizontal padding
 ;;   integer (number of characters)
 
-;;   :content - string to be inserted in the box
+;;   content - string to be inserted in the box
 
 ;;; Code:
 
@@ -51,7 +51,7 @@
 
 (defun grid-content-not-empty-p (box)
   "Non-nil if content of BOX is empty."
-  (not (string-empty-p (plist-get box :content))))
+  (not (string-empty-p (plist-get box 'content))))
 
 (defvar grid-overline '(:overline t) "Overline face.")
 
@@ -99,19 +99,14 @@
 
 (defun grid--fill-box (box)
   "Calculate and fill in the missing fields in BOX."
-  ;; `map-let' doesn't provide access to keywords directly
-  (map-let ((:content content)
-            (:align align)
-            (:padding padding)
-            (:width width))
-      box
+  (map-let (content align padding width) box
     (let* ((padding (* (or padding 0) 2))
            (width-raw (or width (grid--longest-line-length content)))
            (width (- (grid--normalize-width width-raw) padding))
            (content (grid--reformat-content content width align))
-           (box-extra (list :width width
-                            :content content
-                            :length (length content))))
+           (box-extra (list 'width width
+                            'content content
+                            'length (length content))))
       (when (< width 0)
         (user-error "Horizonal padding %s must be less than width %s"
                     padding width-raw))
@@ -146,25 +141,20 @@
   "Normalize BOX to plist."
   (let* ((box (cond
                ((plistp box) (copy-tree box))
-               ((stringp box) (list :content box))))
+               ((stringp box) (list 'content box))))
          (uuid (grid--uuid)))
     (unless (get-text-property 0 'grid-box-uuid
-                               (plist-get box :content #'equal))
-      (plist-put box :uuid uuid #'equal)
-      (plist-put box :content
-                 (propertize (plist-get box :content)
+                               (plist-get box 'content #'equal))
+      (plist-put box 'uuid uuid #'equal)
+      (plist-put box 'content
+                 (propertize (plist-get box 'content)
                              'grid-box-uuid uuid)
                  #'equal))
     box))
 
 (defun grid--format-box (box)
   "Insert BOX in the current buffer."
-  (map-let ((:content content)
-            (:padding padding)
-            (:width width)
-            (:border border)
-            (:length length))
-      box
+  (map-let (content padding width border length) box
     (let* ((content-len (length content))
            ;; isn't it filled with zero by default?
            (line-len (min width content-len))
@@ -183,7 +173,7 @@
                                 (string-empty-p new-content) grid-underline))))
       (when (and border combined-face)
         (grid--apply-face line combined-face))
-      (setq box (plist-put box :content new-content))
+      (setq box (plist-put box 'content new-content))
       line)))
 
 (defun grid--insert-row (row)
