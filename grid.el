@@ -194,7 +194,7 @@
     (while (seq-some #'grid-content-not-empty-p normalized-row)
       (mapc (lambda (box)
               (insert (grid--format-box box))
-              (insert-char ?  grid-margin))
+              (insert-char ?\s grid-margin))
             normalized-row)
       (delete-char (* grid-margin -1))
       (insert ?\n)))
@@ -210,15 +210,15 @@
   (pcase align
     (`center
      (beginning-of-line)
-     (insert-char ?  (ceiling space 2))
+     (insert-char ?\s (ceiling space 2))
      (end-of-line)
-     (insert-char ?  (floor space 2)))
+     (insert-char ?\s (floor space 2)))
     ((or `nil `left)
      (end-of-line)
-     (insert-char ?  space))
+     (insert-char ?\s space))
     (`right
      (beginning-of-line)
-     (insert-char ?  space))))
+     (insert-char ?\s space))))
 
 (defun grid--align-lines (align)
   "Align lines in the current buffer with ALIGN.
