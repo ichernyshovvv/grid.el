@@ -104,14 +104,12 @@ If the length of the longest line is 0, return 1."
   (map-let (content align padding width) box
     (let* ((padding (* (or padding 0) 2))
            (width-raw (or width (grid--longest-line-length content)))
-           (width (- (grid--normalize-width width-raw) padding))
+           (width (max 2 (- (grid--normalize-width width-raw) padding)))
            (content (grid--reformat-content content width align))
            (box-extra (list 'width width
                             'content content
                             'length (length content))))
-      (when (< width 0)
-        (user-error "Horizonal padding %s must be less than width %s"
-                    padding width-raw))
+      
       (grid--merge-plists box box-extra))))
 
 (defun grid--uuid ()
