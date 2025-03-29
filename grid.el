@@ -340,7 +340,9 @@ ALIGN values: `left' (default), `right', `center', `full'."
 
 (defun grid-insert-box (box)
   "Insert BOX in the current buffer."
-  (grid-insert-row (list box)))
+  (let ((box (grid--fill-box (grid--normalize-box box))))
+    (while (grid-content-not-empty-p box)
+      (insert (grid--format-box box) ?\n))))
 
 (defun grid-get-box (box)
   "Return BOX as a string."
