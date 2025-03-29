@@ -84,6 +84,7 @@
       (insert content)
       (goto-char (point-min))
       (grid--align-lines align)
+      (put-text-property 1 2 'grid-box-filled t)
       (buffer-string))))
 
 (defun grid--longest-line-length (string)
@@ -206,39 +207,35 @@
   (delete-horizontal-space))
 
 (defsubst grid--align-line (align space)
-  (let ((empty-line-p (= (current-column) 0)))
-    (pcase align
-      (`center
-       (beginning-of-line)
-       (insert-char ?  (ceiling space 2))
-       (end-of-line)
-       (insert-char ?  (floor space 2)))
-      ((or `nil `left)
-       (end-of-line)
-       (insert-char ?  space))
-      (`right
-       (beginning-of-line)
-       (insert-char ?  space)))
-    (when empty-line-p
-      (add-text-properties
-       (line-beginning-position)
-       (1+ (line-beginning-position))
-       (list 'grid-box-newline t
-             'grid-box-emptyline t
-             'grid-box-uuid (get-text-property (point-min) 'grid-box-uuid))))))
+  (pcase align
+    (`center
+     (beginning-of-line)
+     (insert-char ?  (ceiling space 2))
+     (end-of-line)
+     (insert-char ?  (floor space 2)))
+    ((or `nil `left)
+     (end-of-line)
+     (insert-char ?  space))
+    (`right
+     (beginning-of-line)
+     (insert-char ?  space))))
 
 (defun grid--align-lines (align)
   "Align lines in the current buffer with ALIGN.
 ALIGN values: `left' (default), `right', `center', `full'."
   (interactive "P")
   (let (space)
-    ;; mark newlines
-    (while (re-search-forward "\n" nil t)
-      (when (< (line-beginning-position) (point-max))
-        (put-text-property
-         (line-beginning-position)
-         (1+ (line-beginning-position))
-         'grid-box-newline t)))
+    ;; mark newlines from original text
+    (unless (get-text-property 1 'grid-box-filled)
+      (while (search-forward "\n" (1- (point-max)) t)
+        (put-text-property (point) (1+ (point)) 'grid-box-newline t)
+        (when (eolp)
+          (insert-char ?\s)
+          (add-text-properties
+           (1- (point)) (point)
+           `( grid-box-emptyline t
+              grid-box-newline t
+              grid-box-uuid ,(get-text-property (point-min) 'grid-box-uuid))))))
     (goto-char (point-min))
     (while (not (eobp))
       (if align
