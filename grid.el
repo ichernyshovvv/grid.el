@@ -347,7 +347,10 @@ ALIGN values: `left' (default), `right', `center', `full'."
 
 (defun grid-get-box (box)
   "Return BOX as a string."
-  (grid-get-row (list box)))
+  (with-current-buffer (get-buffer-create " *grid-insert*")
+    (erase-buffer)
+    (grid-insert-box box)
+    (buffer-string)))
 
 (defun grid-insert-row (row)
   "Insert ROW in the current buffer."
