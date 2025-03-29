@@ -49,6 +49,10 @@
 
 (defvar grid-margin 1)
 
+(defvar-local grid-prev-highlight-region-function nil)
+(defvar-local grid-prev-unhighlight-region-function nil)
+(defvar-local grid-prev-region-extract-function nil)
+
 (defun grid-content-not-empty-p (box)
   "Non-nil if content of BOX is empty."
   (not (string-empty-p (plist-get box 'content))))
@@ -328,6 +332,24 @@ ALIGN values: `left' (default), `right', `center', `full'."
         (delete-overlay overlay)))))
 
 ;;; API
+
+(define-minor-mode grid-text-selection-mode
+  "Toggle the ability to select and copy from grid content."
+  :global nil
+  (if grid-text-selection-mode
+      (setq-local
+       grid-prev-highlight-region-function redisplay-highlight-region-function
+       grid-prev-unhighlight-region-function redisplay-unhighlight-region-function
+       grid-prev-region-extract-function region-extract-function
+
+       redisplay-highlight-region-function #'grid-redisplay--select
+       redisplay-unhighlight-region-function #'grid-redisplay--unselect
+       region-extract-function #'grid--extract-content)
+    (deactivate-mark)
+    (setq-local
+     redisplay-highlight-region-function grid-prev-highlight-region-function
+     redisplay-unhighlight-region-function grid-prev-unhighlight-region-function
+     region-extract-function grid-prev-region-extract-function)))
 
 (defun grid-insert-box (box)
   "Insert BOX in the current buffer."
