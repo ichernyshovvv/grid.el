@@ -345,7 +345,7 @@ ALIGN values: `left' (default), `right', `center', `full'."
     (while (grid-content-not-empty-p box)
       (insert (grid--format-box box) ?\n))))
 
-(defun grid-get-box (box)
+(defun grid-make-box (box)
   "Return BOX as a string."
   (with-current-buffer (get-buffer-create " *grid-insert*")
     (erase-buffer)
@@ -360,22 +360,22 @@ ALIGN values: `left' (default), `right', `center', `full'."
   "Insert COLUMN in the current buffer."
   (grid-insert-rows (mapcar #'list column)))
 
-(defun grid-get-column (column)
+(defun grid-make-column (column)
   "Return COLUMN as a string."
-  (grid-get-rows (mapcar #'list column)))
+  (grid-make-rows (mapcar #'list column)))
 
 (defun grid-insert-rows (rows)
   "Insert ROWS in the current buffer."
   (mapc #'grid-insert-row rows))
 
-(defun grid-get-row (row)
+(defun grid-make-row (row)
   "Return ROW as a string."
   (with-current-buffer (get-buffer-create " *grid-insert*")
     (erase-buffer)
     (grid-insert-row row)
     (buffer-string)))
 
-(defun grid-get-rows (rows)
+(defun grid-make-rows (rows)
   "Return ROWS as a string."
   (with-current-buffer (get-buffer-create " *grid-insert*")
     (erase-buffer)

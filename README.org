@@ -74,10 +74,10 @@ Result:
 ;; COLUMN: '(BOX BOX ...)
 #+end_src
 
-- ~grid-get-box~
-- ~grid-get-column~
-- ~grid-get-row~
-- ~grid-get-rows~
+- ~grid-make-box~
+- ~grid-make-column~
+- ~grid-make-row~
+- ~grid-make-rows~
 
 BOX formats:
 
