@@ -276,7 +276,8 @@ ALIGN values: `left' (default), `right', `center', `full'."
                            (buffer-substring
                             (prop-match-beginning prop)
                             (min end (prop-match-end prop))))))
-           (with-temp-buffer
+           (with-current-buffer (get-buffer-create " *grid-extract*")
+             (erase-buffer)
              (insert string)
              (goto-char (point-min))
              (while (text-property-search-forward 'grid-box-newline)
@@ -366,13 +367,15 @@ ALIGN values: `left' (default), `right', `center', `full'."
 
 (defun grid-get-row (row)
   "Return ROW as a string."
-  (with-temp-buffer
+  (with-current-buffer (get-buffer-create " *grid-insert*")
+    (erase-buffer)
     (grid-insert-row row)
     (buffer-string)))
 
 (defun grid-get-rows (rows)
   "Return ROWS as a string."
-  (with-temp-buffer
+  (with-current-buffer (get-buffer-create " *grid-insert*")
+    (erase-buffer)
     (grid-insert-rows rows)
     (buffer-string)))
 
