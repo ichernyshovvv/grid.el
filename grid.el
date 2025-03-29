@@ -284,7 +284,7 @@ ALIGN values: `left' (default), `right', `center', `full'."
                  face grid-underline))
              (remove-list-of-text-properties
               (point-min) (point-max)
-              '(grid-box-uuid grid-box-newline))
+              '(grid-box-uuid grid-box-newline grid-box-filled))
              (buffer-string))))))))
 
 (defun grid-redisplay--select (start end window overlay)
