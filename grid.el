@@ -309,24 +309,22 @@ ALIGN values: `left' (default), `right', `center', `full'."
                  (eq (overlay-start overlay) start)
                  (eq (overlay-end overlay) end))
       (move-overlay overlay start end (current-buffer)))
-    (when (/= (line-number-at-pos start)
-              (line-number-at-pos end))
-      (overlay-put overlay 'face nil)
-      (save-excursion
-        (goto-char start)
-        (let ((uuid (get-text-property start 'grid-box-uuid)) prop)
-          (while (setq prop (text-property-search-forward
-                             'grid-box-uuid t
-                             (lambda (_ uuid-at-point)
-                               (and (equal uuid uuid-at-point)
-                                    (<= (point) (line-end-position))
-                                    (<= (point) end)))))
-            (let ((ov (make-overlay
-                       (prop-match-beginning prop)
-                       (min end (prop-match-end prop)))))
-              (overlay-put ov 'face 'region)
-              (overlay-put ov 'grid-box-active-region t)
-              (overlay-put ov 'window window))))))
+    (overlay-put overlay 'face nil)
+    (save-excursion
+      (goto-char start)
+      (let ((uuid (get-text-property start 'grid-box-uuid)) prop)
+        (while (setq prop (text-property-search-forward
+                           'grid-box-uuid t
+                           (lambda (_ uuid-at-point)
+                             (and (equal uuid uuid-at-point)
+                                  (<= (point) (line-end-position))
+                                  (<= (point) end)))))
+          (let ((ov (make-overlay
+                     (prop-match-beginning prop)
+                     (min end (prop-match-end prop)))))
+            (overlay-put ov 'face 'region)
+            (overlay-put ov 'grid-box-active-region t)
+            (overlay-put ov 'window window)))))
     overlay))
 
 (defun grid-redisplay--unselect (rol)
