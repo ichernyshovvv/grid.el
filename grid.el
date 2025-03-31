@@ -261,7 +261,6 @@ ALIGN values: `left' (default), `right', `center', `full'."
                            'grid-box-uuid t
                            (lambda (_ uuid-at-point)
                              (and (equal uuid uuid-at-point)
-                                  (<= (point) (line-end-position))
                                   (<= (point) end)))))
           (setq string
                 (concat string " "
@@ -292,42 +291,89 @@ ALIGN values: `left' (default), `right', `center', `full'."
 
 (defun grid-redisplay--select (start end window overlay)
   "Update the overlay OVERLAY in WINDOW with FACE in range START-END."
-  (if (not (overlayp overlay))
-      (let ((nrol (make-overlay start end)))
-        (funcall redisplay-unhighlight-region-function overlay)
-        (overlay-put nrol 'window window)
-        (overlay-put nrol 'priority nil)
-        nrol)
+  (cond
+   ((not (overlayp overlay))
+    (let ((nrol (make-overlay start end)))
+      (funcall redisplay-unhighlight-region-function overlay)
+      (overlay-put nrol 'window window)
+      (overlay-put nrol 'priority nil)
+      (overlay-put nrol 'grid-box-uuid
+                   (get-text-property start 'grid-box-uuid))
+      (overlay-put nrol 'grid-active-region-start 0)
+      (overlay-put nrol 'grid-active-region-end 0)
+      nrol))
+   ((and (eq start (overlay-get overlay 'grid-active-region-start))
+         (eq end (overlay-get overlay 'grid-active-region-end)))
+    overlay)
+   (t
     (unless (and (eq (overlay-buffer overlay) (current-buffer))
                  (eq (overlay-start overlay) start)
                  (eq (overlay-end overlay) end))
       (move-overlay overlay start end (current-buffer)))
+
+    (overlay-put overlay 'grid-active-region-start start)
+    (overlay-put overlay 'grid-active-region-end end)
     (overlay-put overlay 'face nil)
+
     (save-excursion
       (goto-char start)
-      (let ((uuid (get-text-property start 'grid-box-uuid)) prop)
+      (let ((uuid (or (overlay-get overlay 'grid-box-uuid)
+                      (progn
+                        (overlay-put overlay 'grid-box-uuid
+                                     (get-text-property start 'grid-box-uuid))
+                        (get-text-property start 'grid-box-uuid))))
+            (overlays (or (overlay-get overlay 'overlays) (list)))
+            prop)
         (while (setq prop (text-property-search-forward
                            'grid-box-uuid t
                            (lambda (_ uuid-at-point)
                              (and (equal uuid uuid-at-point)
-                                  (<= (point) (line-end-position))
                                   (<= (point) end)))))
-          (let ((ov (make-overlay
-                     (prop-match-beginning prop)
-                     (min end (prop-match-end prop)))))
-            (overlay-put ov 'face 'region)
-            (overlay-put ov 'grid-box-active-region t)
-            (overlay-put ov 'window window)))))
-    overlay))
+          (let ((new-candidate-start (prop-match-beginning prop))
+                (new-candidate-end (min end (prop-match-end prop))))
+            (or
+             (catch 'found
+               (dolist (o overlays)
+                 (when (or (and (= (overlay-start o) new-candidate-start)
+                                (/= (overlay-end o) new-candidate-end))
+                           (and (= (overlay-end o) new-candidate-end)
+                                (/= (overlay-start o) new-candidate-start)))
+                   (move-overlay o new-candidate-start new-candidate-end)
+                   (throw 'found t))))
+             (unless (catch 'found
+                       (dolist (o overlays)
+                         (when (<= (overlay-start o)
+                                   new-candidate-start
+                                   new-candidate-end
+                                   (overlay-end o))
+                           (throw 'found t))))
+               (let ((ov (make-overlay new-candidate-start
+                                       new-candidate-end)))
+                 (overlay-put ov 'face 'region)
+                 (overlay-put ov 'grid-box-active-region t)
+                 (overlay-put ov 'window window)
+                 (push ov overlays))))))
+        (overlay-put overlay 'overlays
+                     (seq-remove
+                      (lambda (o)
+                        (when (or (and (> (overlay-end o) end)
+                                       (< start (overlay-start o)))
+                                  (and (< (overlay-start o) start)
+                                       (> end (overlay-end o))))
+                          (delete-overlay o)
+                          t))
+                      overlays))))
+    overlay)))
 
 (defun grid-redisplay--unselect (rol)
   "If ROL is an overlay, call `delete-overlay'."
-  (when-let* ((overlayp rol)
-              (start (overlay-start rol))
-              (end (overlay-end rol)))
-    (dolist (overlay (overlays-in start end))
-      (when (overlay-get overlay 'grid-box-active-region)
-        (delete-overlay overlay)))))
+  (when (overlayp rol)
+    (dolist (overlay (overlay-get rol 'overlays))
+      (delete-overlay overlay))
+    (overlay-put rol 'overlays nil)
+    (overlay-put rol 'grid-box-uuid nil)
+    (overlay-put rol 'grid-active-region-start nil)
+    (overlay-put rol 'grid-active-region-end nil)))
 
 ;;; API
 
