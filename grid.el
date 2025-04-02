@@ -103,19 +103,6 @@ If the length of the longest line is 0, return 1."
   (apply-partially #'map-merge-with 'plist (lambda (_ x) x))
   "Merge plists, the last one takes precedence.")
 
-(defun grid--fill-box (box)
-  "Calculate and fill in the missing fields in BOX."
-  (map-let (content align padding width) box
-    (let* ((padding (* (or padding 0) 2))
-           (width-raw (or width (grid--longest-line-length content)))
-           (width (max 2 (- (grid--normalize-width width-raw) padding)))
-           (content (grid--reformat-content content width align))
-           (box-extra (list 'width width
-                            'content content
-                            'length (length content))))
-      
-      (grid--merge-plists box box-extra))))
-
 (defun grid--uuid ()
   "Return string with random (version 4) UUID."
   ;; This is a copy of `org-id-uuid'.
@@ -153,7 +140,15 @@ If the length of the longest line is 0, return 1."
         (plist-put box 'content
                    (propertize (plist-get box 'content)
                                'grid-box-uuid uuid))))
-    box))
+    (map-let (content align padding width) box
+      (let* ((padding (* (or padding 0) 2))
+             (width-raw (or width (grid--longest-line-length content)))
+             (width (max 2 (- (grid--normalize-width width-raw) padding)))
+             (content (grid--reformat-content content width align))
+             (box-extra (list 'width width
+                              'content content
+                              'length (length content))))
+        (grid--merge-plists box box-extra)))))
 
 (defun grid--format-box-line (box)
   "Format line from BOX to be inserted and return it.
@@ -176,14 +171,12 @@ Delete the line from 'content property of BOX."
                                 (string-empty-p new-content) grid-underline))))
       (when (and border combined-face)
         (grid--apply-face line combined-face))
-      (setq box (plist-put box 'content new-content))
+      (plist-put box 'content new-content)
       line)))
 
 (defun grid--insert-row (row)
   "Insert ROW in the current buffer."
-  (let ((normalized-row (seq-map (lambda (box)
-                                   (grid--fill-box (grid--normalize-box box)))
-                                 row)))
+  (let ((normalized-row (seq-map #'grid--normalize-box row)))
     (while (seq-some #'grid-content-not-empty-p normalized-row)
       (mapc (lambda (box)
               (insert (grid--format-box-line box))
@@ -409,7 +402,7 @@ ALIGN values: `left' (default), `right', `center', `full'."
 
 (defun grid-insert-box (box)
   "Insert BOX in the current buffer."
-  (let ((box (grid--fill-box (grid--normalize-box box))))
+  (let ((box (grid--normalize-box box)))
     (while (grid-content-not-empty-p box)
       (insert (grid--format-box-line box) ?\n))))
 
