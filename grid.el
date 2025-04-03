@@ -276,6 +276,7 @@ ALIGN values: `left' (default), `right', `center', `full'."
              (erase-buffer)
              (insert string)
              (goto-char (point-min))
+             (delete-char 1)
              (while (text-property-search-forward 'grid-box-newline)
                (backward-char 1)
                (delete-char -1)
