@@ -49,9 +49,7 @@
 
 (defvar grid-margin 1)
 
-(defvar-local grid-prev-highlight-region-function nil)
-(defvar-local grid-prev-unhighlight-region-function nil)
-(defvar-local grid-prev-region-extract-function nil)
+(defvar-local grid--prev-states nil)
 
 (defun grid-content-not-empty-p (box)
   "Non-nil if content of BOX is empty."
@@ -388,18 +386,13 @@ ALIGN values: `left' (default), `right', `center', `full'."
   :global nil
   (if grid-text-selection-mode
       (setq-local
-       grid-prev-highlight-region-function redisplay-highlight-region-function
-       grid-prev-unhighlight-region-function redisplay-unhighlight-region-function
-       grid-prev-region-extract-function region-extract-function
-
-       redisplay-highlight-region-function #'grid-redisplay--select
-       redisplay-unhighlight-region-function #'grid-redisplay--unselect
-       region-extract-function #'grid--extract-content)
+       grid--prev-states
+       (buffer-local-set-state
+        redisplay-highlight-region-function #'grid-redisplay--select
+        redisplay-unhighlight-region-function #'grid-redisplay--unselect
+        region-extract-function #'grid--extract-content))
     (deactivate-mark)
-    (setq-local
-     redisplay-highlight-region-function grid-prev-highlight-region-function
-     redisplay-unhighlight-region-function grid-prev-unhighlight-region-function
-     region-extract-function grid-prev-region-extract-function)))
+    (buffer-local-restore-state grid--prev-states)))
 
 (defun grid-insert-box (box)
   "Insert BOX in the current buffer."
