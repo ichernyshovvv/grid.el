@@ -39,7 +39,11 @@
 
 ;;   padding-left - left padding
 ;;   padding-right - right padding
-;;   integer (number of characters)
+;;   integer (number of spaces)
+
+;;   margin-left
+;;   margin-right
+;;   integer (number of spaces)
 
 ;;   content - string to be inserted in the box
 
@@ -47,8 +51,6 @@
 
 (require 'subr-x)
 (require 'map)
-
-(defvar grid-margin 1)
 
 (defvar-local grid--prev-states nil)
 
@@ -139,8 +141,13 @@ If the length of the longest line is 0, return 1."
         (plist-put box 'content
                    (propertize (plist-get box 'content)
                                'grid-box-uuid uuid))))
-    (map-let (content align padding-left padding-right width) box
-      (let* ((padding-left (or padding-left 0))
+    (map-let ( content align width
+               padding-left padding-right
+               margin-left margin-right)
+        box
+      (let* ((margin-left (or margin-left 1))
+             (margin-right (or margin-right 1))
+             (padding-left (or padding-left 0))
              (padding-right (or padding-right 0))
              (width-raw (or width (grid--longest-line-length content)))
              (width (max 2 (- (grid--normalize-width width-raw)
@@ -148,13 +155,18 @@ If the length of the longest line is 0, return 1."
              (content (grid--reformat-content content width align))
              (box-extra (list 'width width
                               'content content
-                              'length (length content))))
+                              'length (length content)
+                              'margin-left margin-left
+                              'margin-right margin-right)))
         (grid--merge-plists box box-extra)))))
 
 (defun grid--format-box-line (box)
   "Format line from BOX to be inserted and return it.
 Delete the line from 'content property of BOX."
-  (map-let (content padding-left padding-right width border length) box
+  (map-let ( content width border length
+             padding-left padding-right
+             margin-left margin-right)
+      box
     (let* ((content-len (length content))
            ;; isn't it filled with zero by default?
            (line-len (min width content-len))
@@ -174,17 +186,16 @@ Delete the line from 'content property of BOX."
       (when (and border combined-face)
         (grid--apply-face line combined-face))
       (plist-put box 'content new-content)
-      line)))
+      (concat (make-string margin-left ?\s)
+              line
+              (make-string margin-right ?\s)))))
 
 (defun grid--insert-row (row)
   "Insert ROW in the current buffer."
   (let ((normalized-row (seq-map #'grid--normalize-box row)))
     (while (seq-some #'grid-content-not-empty-p normalized-row)
-      (mapc (lambda (box)
-              (insert (grid--format-box-line box))
-              (insert-char ?\s grid-margin))
+      (mapc (lambda (box) (insert (grid--format-box-line box)))
             normalized-row)
-      (delete-char (* grid-margin -1))
       (insert ?\n))
     (delete-char -1)))
 
