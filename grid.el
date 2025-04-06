@@ -37,7 +37,8 @@
 ;;   "50%"
 ;;   integer (number of characters)
 
-;;   padding - horizontal padding
+;;   padding-left - left padding
+;;   padding-right - right padding
 ;;   integer (number of characters)
 
 ;;   content - string to be inserted in the box
@@ -138,10 +139,12 @@ If the length of the longest line is 0, return 1."
         (plist-put box 'content
                    (propertize (plist-get box 'content)
                                'grid-box-uuid uuid))))
-    (map-let (content align padding width) box
-      (let* ((padding (* (or padding 0) 2))
+    (map-let (content align padding-left padding-right width) box
+      (let* ((padding-left (or padding-left 0))
+             (padding-right (or padding-right 0))
              (width-raw (or width (grid--longest-line-length content)))
-             (width (max 2 (- (grid--normalize-width width-raw) padding)))
+             (width (max 2 (- (grid--normalize-width width-raw)
+                              padding-left padding-right)))
              (content (grid--reformat-content content width align))
              (box-extra (list 'width width
                               'content content
@@ -151,12 +154,13 @@ If the length of the longest line is 0, return 1."
 (defun grid--format-box-line (box)
   "Format line from BOX to be inserted and return it.
 Delete the line from 'content property of BOX."
-  (map-let (content padding width border length) box
+  (map-let (content padding-left padding-right width border length) box
     (let* ((content-len (length content))
            ;; isn't it filled with zero by default?
            (line-len (min width content-len))
-           (padding (make-string (or padding 0) ? ))
-           (fmt (format "%s%% -%ds%s" padding width padding))
+           (padding-left (make-string (or padding-left 0) ?\s))
+           (padding-right (make-string (or padding-right 0) ?\s))
+           (fmt (format "%s%% -%ds%s" padding-left width padding-right))
            (line (format fmt (substring content 0 line-len)))
            (new-content (substring content (min content-len (1+ width))))
            (combined-face (append
