@@ -80,13 +80,15 @@
           (/ (string-to-number width) 100.0)))
     width))
 
-(defun grid--reformat-content (content width align)
+(defun grid--reformat-content (content width align padding-top padding-bottom)
   "Reformat CONTENT for a box with WIDTH and align it accoring to ALIGN."
   (let (indent-tabs-mode sentence-end-double-space)
     (with-current-buffer (get-buffer-create " *grid-fill*")
       (erase-buffer)
+      (insert-char ?\n padding-top)
       (setq fill-column width)
       (insert content)
+      (insert-char ?\n (1+ padding-bottom))
       (goto-char (point-min))
       (grid--align-lines align)
       (put-text-property 1 2 'grid-box-filled t)
@@ -142,17 +144,20 @@ If the length of the longest line is 0, return 1."
                    (propertize (plist-get box 'content)
                                'grid-box-uuid uuid))))
     (map-let ( content align width
-               padding-left padding-right
+               padding-left padding-right padding-bottom padding-top
                margin-left margin-right)
         box
       (let* ((margin-left (or margin-left 1))
              (margin-right (or margin-right 1))
              (padding-left (or padding-left 0))
              (padding-right (or padding-right 0))
+             (padding-bottom (or padding-bottom 0))
+             (padding-top (or padding-top 0))
              (width-raw (or width (grid--longest-line-length content)))
              (width (max 2 (- (grid--normalize-width width-raw)
                               padding-left padding-right)))
-             (content (grid--reformat-content content width align))
+             (content (grid--reformat-content content width align
+                                              padding-top padding-bottom))
              (box-extra (list 'width width
                               'content content
                               'length (length content)
