@@ -133,36 +133,34 @@ If the length of the longest line is 0, return 1."
 
 (defun grid--normalize-box (box)
   "Normalize BOX to plist."
-  (let ((box (cond
-              ((plistp box) (copy-tree box))
-              ((stringp box) (list 'content box)))))
-    (unless (get-text-property 0 'grid-box-uuid
-                               (plist-get box 'content))
-      (let ((uuid (grid--uuid)))
-        (plist-put box 'uuid uuid)
-        (plist-put box 'content
-                   (propertize (plist-get box 'content)
-                               'grid-box-uuid uuid))))
-    (map-let ( content align width
-               padding-left padding-right padding-bottom padding-top
-               margin-left margin-right)
+  (let ((box (cond ((plistp box) (copy-tree box))
+                   ((stringp box) (list 'content box)))))
+    (map-let ( content align
+               ('width width-raw (grid--longest-line-length content))
+               ('padding-left padding-left 0)
+               ('padding-right padding-right 0)
+               ('padding-top padding-top 0)
+               ('padding-bottom padding-bottom 0)
+               ('margin-left margin-left 1)
+               ('margin-right margin-right 1))
         box
-      (let* ((margin-left (or margin-left 1))
-             (margin-right (or margin-right 1))
-             (padding-left (or padding-left 0))
-             (padding-right (or padding-right 0))
-             (padding-bottom (or padding-bottom 0))
-             (padding-top (or padding-top 0))
-             (width-raw (or width (grid--longest-line-length content)))
+      (let* ((id-of-box-inside (with-temp-buffer
+                                 (insert content)
+                                 (goto-char (point-min))
+                                 (text-property-search-forward 'grid-box-uuid)))
+             (uuid (or id-of-box-inside (grid--uuid)))
              (width (max 2 (- (grid--normalize-width width-raw)
                               padding-left padding-right)))
-             (content (grid--reformat-content content width align
-                                              padding-top padding-bottom))
+             (content (grid--reformat-content
+                       (if id-of-box-inside content
+                         (propertize content 'grid-box-uuid uuid))
+                       width align padding-top padding-bottom))
              (box-extra (list 'width width
                               'content content
                               'length (length content)
                               'margin-left margin-left
-                              'margin-right margin-right)))
+                              'margin-right margin-right
+                              'uuid uuid)))
         (grid--merge-plists box box-extra)))))
 
 (defun grid--format-box-line (box)
