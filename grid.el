@@ -51,6 +51,7 @@
 
 (require 'subr-x)
 (require 'map)
+(require 'cl-lib)
 
 (defvar-local grid--prev-states nil)
 
@@ -76,7 +77,7 @@
   "Normalize WIDTH."
   (if (stringp width)
       (floor
-       (* (window-width)
+       (* (window-width (get-buffer-window))
           (/ (string-to-number width) 100.0)))
     width))
 
@@ -397,13 +398,63 @@ ALIGN values: `left' (default), `right', `center', `full'."
     (overlay-put rol 'grid-active-region-start nil)
     (overlay-put rol 'grid-active-region-end nil)))
 
+(defcustom grid-revert-delay 0.3
+  "Seconds to wait before redisplaying buffers with grid blocks."
+  :type 'float)
+
+(defvar grid--timer
+  (let ((timer (timer-create)))
+    (timer-set-function timer #'grid--do-revert)
+    timer))
+
+(defun grid--set-revert-on-width-change (symbol value)
+  "Set SYMBOL's value to VALUE."
+  (if value
+      (progn
+        (add-hook 'window-state-change-hook #'grid--revert-maybe)
+        (cl-pushnew #'grid--delayed-revert window-size-change-functions))
+    (remove-hook 'window-state-change-hook #'grid--revert-maybe)
+    (setq window-size-change-functions
+          (delq #'grid--delayed-revert
+                window-size-change-functions)))
+  (set symbol value))
+
+(defcustom grid-revert-on-width-change t
+  "Whether to revert displayed buffers with grid blocks if window size changed."
+  :type 'boolean
+  :set #'grid--set-revert-on-width-change)
+
+(defun grid--delayed-revert (&optional window)
+  "Revert currently displayed grid buffers with delay of `grid-revert-delay' seconds."
+  (timer-set-time grid--timer (time-add nil grid-revert-delay))
+  (timer-activate grid--timer))
+
+(defun grid--revert-maybe ()
+  "Revert if windows count changed in the current frame."
+  (unless (eq (frame-parameter (window-frame) 'grid--windows-count)
+              (count-windows))
+    (grid--do-revert)
+    (set-frame-parameter (window-frame) 'grid--windows-count (count-windows))))
+
+(defvar-local grid--window-width 0)
+
+(defun grid--do-revert (&rest _)
+  (dolist (window (window-list))
+    (with-current-buffer (window-buffer window)
+      (and-let* (((memq 'grid-text-selection-mode local-minor-modes))
+                 (width (window-pixel-width window))
+                 ((/= width grid--window-width)))
+        (revert-buffer nil t)
+        (setq grid--window-width width)))))
+
 ;;; API
 
 (define-minor-mode grid-text-selection-mode
   "Toggle the ability to select and copy from grid content."
   :global nil
   (if grid-text-selection-mode
-      (setq-local
+      (setq
+       grid--window-width (window-pixel-width)
        grid--prev-states
        (buffer-local-set-state
         redisplay-highlight-region-function #'grid-redisplay--select
