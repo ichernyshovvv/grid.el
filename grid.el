@@ -137,13 +137,18 @@ If the length of the longest line is 0, return 1."
   "Normalize BOX to plist."
   (let ((box (cond ((plistp box) (copy-tree box))
                    ((stringp box) (list :content box)))))
+    (and-let* ((padding (plist-get box :padding))
+               ((integerp padding)))
+      (setf (plist-get box :padding)
+            (make-list 4 padding)))
     (map-let ((:content content)
               (:align align)
               (:width width-raw (grid--longest-line-length content))
-              (:padding-left padding-left 0)
-              (:padding-right padding-right 0)
-              (:padding-top padding-top 0)
-              (:padding-bottom padding-bottom 0)
+              (:padding padding)
+              (:padding-top padding-top (or (car padding) 0))
+              (:padding-right padding-right (or (cadr padding) 0))
+              (:padding-bottom padding-bottom (or (caddr padding) 0))
+              (:padding-left padding-left (or (cadddr padding) 0))
               (:margin-left margin-left 1)
               (:margin-right margin-right 1))
         box
@@ -180,7 +185,6 @@ Delete the line from 'content property of BOX."
             (:margin-right margin-right))
       box
     (let* ((content-len (length content))
-           ;; isn't it filled with zero by default?
            (fmt (format "%% -%ds" width))
            (line (format fmt (substring content 0 (min width content-len))))
            (new-content (substring content (min content-len (1+ width))))
