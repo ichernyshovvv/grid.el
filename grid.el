@@ -57,7 +57,7 @@
 
 (defun grid-content-not-empty-p (box)
   "Non-nil if content of BOX is empty."
-  (not (string-empty-p (plist-get box 'content))))
+  (not (string-empty-p (plist-get box :content))))
 
 (defvar grid-overline '(:overline t) "Overline face.")
 
@@ -136,15 +136,16 @@ If the length of the longest line is 0, return 1."
 (defun grid--normalize-box (box)
   "Normalize BOX to plist."
   (let ((box (cond ((plistp box) (copy-tree box))
-                   ((stringp box) (list 'content box)))))
-    (map-let ( content align
-               ('width width-raw (grid--longest-line-length content))
-               ('padding-left padding-left 0)
-               ('padding-right padding-right 0)
-               ('padding-top padding-top 0)
-               ('padding-bottom padding-bottom 0)
-               ('margin-left margin-left 1)
-               ('margin-right margin-right 1))
+                   ((stringp box) (list :content box)))))
+    (map-let ((:content content)
+              (:align align)
+              (:width width-raw (grid--longest-line-length content))
+              (:padding-left padding-left 0)
+              (:padding-right padding-right 0)
+              (:padding-top padding-top 0)
+              (:padding-bottom padding-bottom 0)
+              (:margin-left margin-left 1)
+              (:margin-right margin-right 1))
         box
       (let* ((id-of-box-inside (with-temp-buffer
                                  (insert content)
@@ -159,20 +160,24 @@ If the length of the longest line is 0, return 1."
                        content-width align
                        padding-top padding-bottom
                        padding-left padding-right))
-             (box-extra (list 'width width
-                              'content-width content-width
-                              'content content
-                              'length (length content)
-                              'margin-left margin-left
-                              'margin-right margin-right
-                              'uuid uuid)))
+             (box-extra (list :width width
+                              :content-width content-width
+                              :content content
+                              :length (length content)
+                              :margin-left margin-left
+                              :margin-right margin-right
+                              :uuid uuid)))
         (grid--merge-plists box box-extra)))))
 
 (defun grid--format-box-line (box)
   "Format line from BOX to be inserted and return it.
 Delete the line from 'content property of BOX."
-  (map-let ( content width border length
-             margin-left margin-right)
+  (map-let ((:content content)
+            (:width width)
+            (:border border)
+            (:length length)
+            (:margin-left margin-left)
+            (:margin-right margin-right))
       box
     (let* ((content-len (length content))
            ;; isn't it filled with zero by default?
@@ -189,7 +194,7 @@ Delete the line from 'content property of BOX."
                                 (string-empty-p new-content) grid-underline))))
       (when (and border combined-face)
         (grid--apply-face line combined-face))
-      (plist-put box 'content new-content)
+      (plist-put box :content new-content)
       (concat (make-string margin-left ?\s)
               line
               (make-string margin-right ?\s)))))
