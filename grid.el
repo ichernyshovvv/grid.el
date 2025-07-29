@@ -80,17 +80,19 @@
    ((integerp width) width)
    (t (error "Wrong width format"))))
 
-(defun grid--reformat-content (content width align padding-top padding-bottom)
-  "Reformat CONTENT for a box with WIDTH and align it accoring to ALIGN."
+(defun grid--reformat-content ( content content-width align
+                                padding-top padding-bottom
+                                padding-left padding-right)
+  "Reformat CONTENT for a box with CONTENT-WIDTH and align it accoring to ALIGN."
   (let (indent-tabs-mode sentence-end-double-space)
     (with-current-buffer (get-buffer-create " *grid-fill*")
       (erase-buffer)
       (insert-char ?\n padding-top)
-      (setq fill-column width)
+      (setq fill-column content-width)
       (insert content)
       (insert-char ?\n (1+ padding-bottom))
       (goto-char (point-min))
-      (grid--align-lines align)
+      (grid--align-lines align padding-left padding-right)
       (put-text-property 1 2 'grid-box-filled t)
       (buffer-string))))
 
@@ -149,13 +151,16 @@ If the length of the longest line is 0, return 1."
                                  (goto-char (point-min))
                                  (text-property-search-forward 'grid-box-uuid)))
              (uuid (or id-of-box-inside (grid--uuid)))
-             (width (max 2 (- (grid--normalize-width width-raw)
-                              padding-left padding-right)))
+             (width (max 2 (grid--normalize-width width-raw)))
+             (content-width (max 2 (- width padding-left padding-right)))
              (content (grid--reformat-content
                        (if id-of-box-inside content
                          (propertize content 'grid-box-uuid uuid))
-                       width align padding-top padding-bottom))
+                       content-width align
+                       padding-top padding-bottom
+                       padding-left padding-right))
              (box-extra (list 'width width
+                              'content-width content-width
                               'content content
                               'length (length content)
                               'margin-left margin-left
@@ -219,7 +224,7 @@ Delete the line from 'content property of BOX."
      (beginning-of-line)
      (insert-char ?\s space))))
 
-(defun grid--align-lines (align)
+(defun grid--align-lines (align padding-left padding-right)
   "Align lines in the current buffer with ALIGN.
 ALIGN values: `left' (default), `right', `center', `full'."
   (interactive "P")
@@ -237,12 +242,9 @@ ALIGN values: `left' (default), `right', `center', `full'."
               grid-box-uuid ,(get-text-property (point-min) 'grid-box-uuid))))))
     (goto-char (point-min))
     (while (progn
-             (if align
-                 (grid--trim-line)
-               (end-of-line))
+             (if align (grid--trim-line) (end-of-line))
              (setq space (- fill-column (current-column)))
-             (if (>= space 0)
-                 (grid--align-line align space)
+             (when (< space 0)
                (let ((beg (line-beginning-position)))
                  (fill-region beg (line-end-position) align)
                  (goto-char beg)
@@ -251,8 +253,12 @@ ALIGN values: `left' (default), `right', `center', `full'."
                  (when (< space 0)
                    (forward-char space)
                    (insert ?\n)
-                   (setq space (+ fill-column space)))
-                 (grid--align-line align space)))
+                   (setq space (+ fill-column space)))))
+             (grid--align-line align space)
+             (beginning-of-line)
+             (insert-char ?\s padding-left)
+             (end-of-line)
+             (insert-char ?\s padding-right)
              (forward-line 1)
              (not (eobp))))))
 
