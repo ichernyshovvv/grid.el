@@ -450,7 +450,11 @@ ALIGN values: `left' (default), `right', `center', `full'."
       (and-let* (((memq 'grid-text-selection-mode local-minor-modes))
                  (width (window-pixel-width window))
                  ((/= width grid--window-width)))
-        (revert-buffer nil t)
+        (condition-case err (revert-buffer nil t)
+          (error
+           (unless (equal "Buffer does not seem to be associated with any file"
+                          (error-message-string err))
+             (error (error-message-string err)))))
         (setq grid--window-width width)))))
 
 ;;; API
