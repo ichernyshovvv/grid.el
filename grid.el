@@ -167,15 +167,12 @@ If the length of the longest line is 0, return 1."
   "Format line from BOX to be inserted and return it.
 Delete the line from 'content property of BOX."
   (map-let ( content width border length
-             padding-left padding-right
              margin-left margin-right)
       box
     (let* ((content-len (length content))
            ;; isn't it filled with zero by default?
            (line-len (min width content-len))
-           (padding-left (make-string (or padding-left 0) ?\s))
-           (padding-right (make-string (or padding-right 0) ?\s))
-           (fmt (format "%s%% -%ds%s" padding-left width padding-right))
+           (fmt (format "%% -%ds" width))
            (line (format fmt (substring content 0 line-len)))
            (new-content (substring content (min content-len (1+ width))))
            (combined-face (append
