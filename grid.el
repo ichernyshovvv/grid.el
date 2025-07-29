@@ -176,9 +176,8 @@ Delete the line from 'content property of BOX."
       box
     (let* ((content-len (length content))
            ;; isn't it filled with zero by default?
-           (line-len (min width content-len))
            (fmt (format "%% -%ds" width))
-           (line (format fmt (substring content 0 line-len)))
+           (line (format fmt (substring content 0 (min width content-len))))
            (new-content (substring content (min content-len (1+ width))))
            (combined-face (append
                            ;; first line?
