@@ -75,11 +75,10 @@
 
 (defun grid--normalize-width (width)
   "Normalize WIDTH."
-  (if (stringp width)
-      (floor
-       (* (window-width (get-buffer-window))
-          (/ (string-to-number width) 100.0)))
-    width))
+  (cond
+   ((floatp width) (floor (* (window-width (get-buffer-window)) width)))
+   ((integerp width) width)
+   (t (error "Wrong width format"))))
 
 (defun grid--reformat-content (content width align padding-top padding-bottom)
   "Reformat CONTENT for a box with WIDTH and align it accoring to ALIGN."
