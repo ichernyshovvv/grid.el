@@ -76,25 +76,30 @@
 (defun grid--normalize-width (width)
   "Normalize WIDTH."
   (cond
-   ((floatp width) (floor (* (window-width (get-buffer-window)) width)))
+   ((floatp width)
+    (floor (* (window-width (get-buffer-window))
+              width)))
    ((integerp width) width)
    (t (error "Wrong width format"))))
 
-(defun grid--reformat-content ( content content-width align
-                                padding-top padding-bottom
-                                padding-left padding-right)
+(defun grid--reformat-content (content content-width align padding)
   "Reformat CONTENT for a box with CONTENT-WIDTH and align it accoring to ALIGN."
-  (let (indent-tabs-mode sentence-end-double-space)
-    (with-current-buffer (get-buffer-create " *grid-fill*")
-      (erase-buffer)
-      (insert-char ?\n padding-top)
-      (setq fill-column content-width)
-      (insert content)
-      (insert-char ?\n (1+ padding-bottom))
-      (goto-char (point-min))
-      (grid--align-lines align padding-left padding-right)
-      (put-text-property 1 2 'grid-box-filled t)
-      (buffer-string))))
+  (seq-let (padding-top padding-right padding-bottom padding-left) padding
+    (let (indent-tabs-mode sentence-end-double-space)
+      (with-current-buffer (get-buffer-create "*grid-fill*")
+        (erase-buffer)
+        (dotimes (_ (car padding-top))
+          (insert-char (cdr padding-top) content-width)
+          (insert-char ?\n))
+        (setq fill-column content-width)
+        (insert content)
+        (dotimes (_ (car padding-bottom))
+          (insert-char ?\n)
+          (insert-char (cdr padding-bottom) content-width))
+        (goto-char (point-min))
+        (grid--align-lines align padding-left padding-right)
+        (put-text-property 1 2 'grid-box-filled t)
+        (buffer-string)))))
 
 (defun grid--longest-line-length (string)
   "Get the length of the longest line in STRING.
@@ -133,46 +138,50 @@ If the length of the longest line is 0, return 1."
             (substring rnd 18 20)
             (substring rnd 20 32))))
 
+(defun grid--normalize-field (field)
+  (cond
+   ((integerp field) `(,field . ?\s))
+   ((nlistp (cdr-safe field)) field)
+   ((not field) '(0 . ?\s))))
+
 (defun grid--normalize-box (box)
   "Normalize BOX to plist."
   (let ((box (cond ((plistp box) (copy-tree box))
                    ((stringp box) (list :content box)))))
-    (and-let* ((padding (plist-get box :padding))
-               ((integerp padding)))
-      (setf (plist-get box :padding)
-            (make-list 4 padding)))
-    (map-let ((:content content)
-              (:align align)
-              (:width width-raw (grid--longest-line-length content))
-              (:padding padding)
-              (:padding-top padding-top (or (car padding) 0))
-              (:padding-right padding-right (or (cadr padding) 0))
-              (:padding-bottom padding-bottom (or (caddr padding) 0))
-              (:padding-left padding-left (or (cadddr padding) 0))
-              (:margin-left margin-left 1)
-              (:margin-right margin-right 1))
+    (dolist (p '(:padding :margin))
+      (setf (plist-get box p)
+            (cl-loop
+             for side in '(top right bottom left)
+             for i in (pcase (proper-list-p (plist-get box p))
+                        (4 (plist-get box p))
+                        (0 '(nil nil nil nil))
+                        ('nil (make-list 4 (plist-get box p)))
+                        (_ (error "Wrong `%s' format" p)))
+             collect (grid--normalize-field
+                      (or (plist-get box (intern (format "%s-%s" p side)))
+                          i)))))
+    (map-let ((:content content) (:align align)
+              (:width width) (:padding padding))
         box
       (let* ((id-of-box-inside (with-temp-buffer
                                  (insert content)
                                  (goto-char (point-min))
                                  (text-property-search-forward 'grid-box-uuid)))
              (uuid (or id-of-box-inside (grid--uuid)))
-             (width (max 2 (grid--normalize-width width-raw)))
-             (content-width (max 2 (- width padding-left padding-right)))
+             (width (max 2 (grid--normalize-width
+                            (or width (grid--longest-line-length content)))))
+             (content-width (max 2 (- width
+                                      (car (nth 3 padding))
+                                      (car (nth 1 padding)))))
              (content (grid--reformat-content
                        (if id-of-box-inside content
                          (propertize content 'grid-box-uuid uuid))
-                       content-width align
-                       padding-top padding-bottom
-                       padding-left padding-right))
-             (box-extra (list :width width
-                              :content-width content-width
-                              :content content
-                              :length (length content)
-                              :margin-left margin-left
-                              :margin-right margin-right
-                              :uuid uuid)))
-        (grid--merge-plists box box-extra)))))
+                       content-width align padding)))
+        (grid--merge-plists box (list :width width
+                                      :content-width content-width
+                                      :content content
+                                      :length (length content)
+                                      :uuid uuid))))))
 
 (defun grid--format-box-line (box)
   "Format line from BOX to be inserted and return it.
@@ -181,8 +190,7 @@ Delete the line from 'content property of BOX."
             (:width width)
             (:border border)
             (:length length)
-            (:margin-left margin-left)
-            (:margin-right margin-right))
+            (:margin margin))
       box
     (let* ((content-len (length content))
            (fmt (format "%% -%ds" width))
@@ -199,9 +207,9 @@ Delete the line from 'content property of BOX."
       (when (and border combined-face)
         (grid--apply-face line combined-face))
       (plist-put box :content new-content)
-      (concat (make-string margin-left ?\s)
+      (concat (make-string (car (nth 3 margin)) ?\s)
               line
-              (make-string margin-right ?\s)))))
+              (make-string (car (nth 1 margin)) ?\s)))))
 
 (defun grid--insert-row (row)
   "Insert ROW in the current buffer."
@@ -264,9 +272,9 @@ ALIGN values: `left' (default), `right', `center', `full'."
                    (setq space (+ fill-column space)))))
              (grid--align-line align space)
              (beginning-of-line)
-             (insert-char ?\s padding-left)
+             (insert-char (cdr padding-left) (car padding-left))
              (end-of-line)
-             (insert-char ?\s padding-right)
+             (insert-char (cdr padding-right) (car padding-right))
              (forward-line 1)
              (not (eobp))))))
 
