@@ -183,9 +183,8 @@ If the length of the longest line is 0, return 1."
                                       :length (length content)
                                       :uuid uuid))))))
 
-(defun grid--format-box-line (box)
-  "Format line from BOX to be inserted and return it.
-Delete the line from 'content property of BOX."
+(defun grid--insert-box-line (box)
+  "Format line from BOX and insert it."
   (map-let ((:content content)
             (:width width)
             (:border border)
@@ -207,16 +206,15 @@ Delete the line from 'content property of BOX."
       (when (and border combined-face)
         (grid--apply-face line combined-face))
       (plist-put box :content new-content)
-      (concat (make-string (car (nth 3 margin)) ?\s)
-              line
-              (make-string (car (nth 1 margin)) ?\s)))))
+      (insert-char (cdr (nth 3 margin)) (car (nth 3 margin)))
+      (insert line)
+      (insert-char (cdr (nth 1 margin)) (car (nth 1 margin))))))
 
 (defun grid--insert-row (row)
   "Insert ROW in the current buffer."
   (let ((normalized-row (seq-map #'grid--normalize-box row)))
     (while (seq-some #'grid-content-not-empty-p normalized-row)
-      (mapc (lambda (box) (insert (grid--format-box-line box)))
-            normalized-row)
+      (mapc #'grid--insert-box-line normalized-row)
       (insert ?\n))
     (delete-char -1)))
 
@@ -489,7 +487,8 @@ ALIGN values: `left' (default), `right', `center', `full'."
   "Insert BOX in the current buffer."
   (let ((box (grid--normalize-box box)))
     (while (grid-content-not-empty-p box)
-      (insert (grid--format-box-line box) ?\n))))
+      (grid--insert-box-line box)
+      (insert-char ?\n))))
 
 (defun grid-make-box (box)
   "Return BOX as a string."
