@@ -423,6 +423,8 @@ ALIGN values: `left' (default), `right', `center', `full'."
 (defvar grid--timer
   (let ((timer (timer-create)))
     (timer-set-function timer #'grid--do-revert)
+    (timer-set-time timer (time-add nil grid-revert-delay))
+    (timer-activate timer)
     timer))
 
 (defun grid--set-revert-on-width-change (symbol value)
@@ -444,8 +446,7 @@ ALIGN values: `left' (default), `right', `center', `full'."
 
 (defun grid--delayed-revert (&optional window)
   "Revert currently displayed grid buffers with delay of `grid-revert-delay' seconds."
-  (timer-set-time grid--timer (time-add nil grid-revert-delay))
-  (timer-activate grid--timer))
+  (timer-set-time grid--timer (time-add nil grid-revert-delay)))
 
 (defun grid--revert-maybe ()
   "Revert if windows count changed in the current frame."
@@ -490,7 +491,8 @@ ALIGN values: `left' (default), `right', `center', `full'."
   (let ((box (grid--normalize-box box)))
     (while (grid-content-not-empty-p box)
       (grid--insert-box-line box)
-      (insert-char ?\n))))
+      (insert-char ?\n))
+    (delete-char -1)))
 
 (defun grid-make-box (box)
   "Return BOX as a string."
