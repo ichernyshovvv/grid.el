@@ -68,7 +68,6 @@
 
 (defun grid--apply-face (string face)
   "Apply FACE to STRING."
-  (declare (indent 1))
   (add-face-text-property
    0 (length string)
    face t string))
@@ -203,7 +202,7 @@ If the length of the longest line is 0, return 1."
            (fmt (format "%% -%ds" width))
            (line (format fmt (substring content 0 (min width content-len))))
            (new-content (substring content (min content-len (1+ width))))
-           (combined-face
+           (border-face
             (append
              ;; first line?
              (and (= length content-len) grid-overline)
@@ -212,8 +211,7 @@ If the length of the longest line is 0, return 1."
              ;; last line?
              (and (not (string-empty-p content))
                   (string-empty-p new-content) grid-underline))))
-      (and border combined-face
-           (grid--apply-face line combined-face))
+      (and border border-face (grid--apply-face line border-face))
       (plist-put box :content new-content)
       (grid--insert-hspacing (nth 3 margin))
       (insert line)
