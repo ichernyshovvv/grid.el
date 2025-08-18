@@ -146,6 +146,10 @@ If the length of the longest line is 0, return 1."
     (insert-char (cdr property) width)
     (insert-char ?\n)))
 
+(defun grid--insert-hspacing (property)
+  "Insert horizontal spacing."
+  (insert-char (cdr property) (car property)))
+
 (defun grid--normalize-box (box)
   "Normalize BOX to plist."
   (let ((box (cond ((plistp box) (copy-tree box))
@@ -211,9 +215,9 @@ If the length of the longest line is 0, return 1."
       (and border combined-face
            (grid--apply-face line combined-face))
       (plist-put box :content new-content)
-      (insert-char (cdr (nth 3 margin)) (car (nth 3 margin)))
+      (grid--insert-hspacing (nth 3 margin))
       (insert line)
-      (insert-char (cdr (nth 1 margin)) (car (nth 1 margin))))))
+      (grid--insert-hspacing (nth 1 margin)))))
 
 (defun grid--insert-row (row)
   "Insert ROW in the current buffer."
@@ -287,9 +291,9 @@ ALIGN values: `left' (default), `right', `center', `full'."
                    (setq space (+ fill-column space)))))
              (grid--align-line align space)
              (beginning-of-line)
-             (insert-char (cdr padding-left) (car padding-left))
+             (grid--insert-hspacing padding-left)
              (end-of-line)
-             (insert-char (cdr padding-right) (car padding-right))
+             (grid--insert-hspacing padding-right)
              (forward-line 1)
              (not (eobp))))))
 
