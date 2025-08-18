@@ -160,13 +160,14 @@ If the length of the longest line is 0, return 1."
                for side in '(top right bottom left)
                for i in (pcase (proper-list-p l)
                           (4 l)
-                          (2 `(,(car l) ,(cadr l) ,(car l) ,(cadr l)))
+                          (2 `(,@l ,@l))
                           (0 '(nil nil nil nil))
                           ('nil (make-list 4 l))
                           (_ (error "Wrong `%s' format" p)))
-               collect (grid--normalize-field
-                        (or (plist-get box (intern (format "%s-%s" p side)))
-                            i))))))
+               collect
+               (grid--normalize-field
+                (or (plist-get box (intern (format "%s-%s" p side)))
+                    i))))))
     (map-let ((:content content) (:align align)
               (:width width) (:padding padding))
         box
