@@ -88,14 +88,10 @@
     (let (indent-tabs-mode sentence-end-double-space)
       (with-current-buffer (get-buffer-create "*grid-fill*")
         (erase-buffer)
-        (dotimes (_ (car padding-top))
-          (insert-char (cdr padding-top) content-width)
-          (insert-char ?\n))
+        (grid--insert-vspacing padding-top content-width)
         (setq fill-column content-width)
         (insert content)
-        (dotimes (_ (car padding-bottom))
-          (insert-char ?\n)
-          (insert-char (cdr padding-bottom) content-width))
+        (grid--insert-vspacing padding-bottom content-width)
         (goto-char (point-min))
         (grid--align-lines align padding-left padding-right)
         (put-text-property 1 2 'grid-box-filled t)
@@ -143,6 +139,12 @@ If the length of the longest line is 0, return 1."
    ((integerp field) `(,field . ?\s))
    ((nlistp (cdr-safe field)) field)
    ((not field) '(0 . ?\s))))
+
+(defun grid--insert-vspacing (property width)
+  "Insert vertical spacing."
+  (dotimes (_ (car property))
+    (insert-char (cdr property) width)
+    (insert-char ?\n)))
 
 (defun grid--normalize-box (box)
   "Normalize BOX to plist."
@@ -197,16 +199,17 @@ If the length of the longest line is 0, return 1."
            (fmt (format "%% -%ds" width))
            (line (format fmt (substring content 0 (min width content-len))))
            (new-content (substring content (min content-len (1+ width))))
-           (combined-face (append
-                           ;; first line?
-                           (and (= length content-len) grid-overline)
-                           ;; in body?
-                           (and (/= content-len 0) grid-vertical-borders)
-                           ;; last line?
-                           (and (not (string-empty-p content))
-                                (string-empty-p new-content) grid-underline))))
-      (when (and border combined-face)
-        (grid--apply-face line combined-face))
+           (combined-face
+            (append
+             ;; first line?
+             (and (= length content-len) grid-overline)
+             ;; in body?
+             (and (/= content-len 0) grid-vertical-borders)
+             ;; last line?
+             (and (not (string-empty-p content))
+                  (string-empty-p new-content) grid-underline))))
+      (and border combined-face
+           (grid--apply-face line combined-face))
       (plist-put box :content new-content)
       (insert-char (cdr (nth 3 margin)) (car (nth 3 margin)))
       (insert line)
@@ -221,9 +224,7 @@ If the length of the longest line is 0, return 1."
                (horizontal-space (+ (plist-get box :width)
                                     (car (nth 1 margin))
                                     (car (nth 3 margin)))))
-          (dotimes (_ (car (nth 0 margin)))
-            (insert-char (cdr (nth 0 margin)) horizontal-space)
-            (insert ?\n))))
+          (grid--insert-vspacing (nth 0 margin) horizontal-space)))
       (mapc #'grid--insert-box-line normalized-row)
       (insert ?\n)
       (dolist (box normalized-row)
@@ -231,9 +232,7 @@ If the length of the longest line is 0, return 1."
                (horizontal-space (+ (plist-get box :width)
                                     (car (nth 1 margin))
                                     (car (nth 3 margin)))))
-          (dotimes (_ (car (nth 2 margin)))
-            (insert-char (cdr (nth 2 margin)) horizontal-space)
-            (insert ?\n)))))
+          (grid--insert-vspacing (nth 2 margin) horizontal-space))))
     (delete-char -1)))
 
 (defsubst grid--trim-line ()
@@ -510,15 +509,11 @@ ALIGN values: `left' (default), `right', `center', `full'."
          (horizontal-space (+ width
                               (car (nth 1 margin))
                               (car (nth 3 margin)))))
-    (dotimes (_ (car (nth 0 margin)))
-      (insert-char (cdr (nth 0 margin)) horizontal-space)
-      (insert ?\n))
+    (grid--insert-vspacing (nth 0 margin) horizontal-space)
     (while (grid-content-not-empty-p box)
       (grid--insert-box-line box)
       (insert-char ?\n))
-    (dotimes (_ (car (nth 2 margin)))
-      (insert-char (cdr (nth 2 margin)) horizontal-space)
-      (insert ?\n))
+    (grid--insert-vspacing (nth 2 margin) horizontal-space)
     (delete-char -1)))
 
 (defun grid-make-box (box)
