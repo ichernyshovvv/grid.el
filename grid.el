@@ -86,8 +86,8 @@
   "Reformat CONTENT for a box with CONTENT-WIDTH and align it accoring to ALIGN."
   (pcase-let ((`(,padding-top ,padding-right ,padding-bottom ,padding-left) padding)
               (`(,margin-top ,margin-right ,margin-bottom ,margin-left) margin))
-    (let (indent-tabs-mode sentence-end-double-space)
-      (with-current-buffer (get-buffer-create "*grid-fill*")
+    (with-current-buffer (get-buffer-create "*grid-fill*")
+      (let (indent-tabs-mode sentence-end-double-space)
         (erase-buffer)
         (grid--insert-vspacing padding-top content-width)
         (setq fill-column content-width)
