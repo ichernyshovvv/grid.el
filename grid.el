@@ -57,7 +57,8 @@
 
 (defun grid-content-not-empty-p (box)
   "Non-nil if content of BOX is empty."
-  (not (string-empty-p (plist-get box :content))))
+  (/= (plist-get box :start-marker)
+      (plist-get box :end-marker)))
 
 (defvar grid-overline '(:overline t) "Overline face.")
 
@@ -81,9 +82,10 @@
    ((integerp width) width)
    (t (error "Wrong width format"))))
 
-(defun grid--reformat-content (content content-width align padding)
+(defun grid--reformat-content (content content-width align padding margin)
   "Reformat CONTENT for a box with CONTENT-WIDTH and align it accoring to ALIGN."
-  (seq-let (padding-top padding-right padding-bottom padding-left) padding
+  (pcase-let ((`(,padding-top ,padding-right ,padding-bottom ,padding-left) padding)
+              (`(,margin-top ,margin-right ,margin-bottom ,margin-left) margin))
     (let (indent-tabs-mode sentence-end-double-space)
       (with-current-buffer (get-buffer-create "*grid-fill*")
         (erase-buffer)
@@ -92,8 +94,12 @@
         (insert content)
         (grid--insert-vspacing padding-bottom content-width)
         (goto-char (point-min))
-        (grid--align-lines align padding-left padding-right)
+        (grid--align-lines align padding-left padding-right margin-left margin-right)
         (put-text-property 1 2 'grid-box-filled t)
+        (goto-char (point-min))
+        (grid--insert-vspacing margin-top content-width)
+        (goto-char (point-max))
+        (grid--insert-vspacing margin-bottom content-width)
         (buffer-string)))))
 
 (defun grid--longest-line-length (string)
@@ -168,7 +174,7 @@ If the length of the longest line is 0, return 1."
                (grid--normalize-field
                 (or (plist-get box (intern (format "%s-%s" p side)))
                     i))))))
-    (map-let ((:content content) (:align align)
+    (map-let ((:content content) (:align align) (:margin margin)
               (:width width) (:padding padding))
         box
       (let* ((id-of-box-inside (with-temp-buffer
@@ -184,11 +190,12 @@ If the length of the longest line is 0, return 1."
              (content (grid--reformat-content
                        (if id-of-box-inside content
                          (propertize content 'grid-box-uuid uuid))
-                       content-width align padding)))
+                       content-width align padding margin)))
         (grid--merge-plists box (list :width width
+                                      :start-marker 0
+                                      :end-marker (length content)
                                       :content-width content-width
                                       :content content
-                                      :length (length content)
                                       :uuid uuid))))))
 
 (defun grid--insert-box-line (box)
@@ -196,46 +203,36 @@ If the length of the longest line is 0, return 1."
   (map-let ((:content content)
             (:width width)
             (:border border)
-            (:length length)
-            (:margin margin))
+            (:margin margin)
+            (:start-marker start-marker)
+            (:end-marker end-marker))
       box
-    (let* ((content-len (length content))
-           (fmt (format "%% -%ds" width))
-           (line (format fmt (substring content 0 (min width content-len))))
-           (new-content (substring content (min content-len (1+ width))))
-           (border-face
-            (append
-             ;; first line?
-             (and (= length content-len) grid-overline)
-             ;; in body?
-             (and (/= content-len 0) grid-vertical-borders)
-             ;; last line?
-             (and (not (string-empty-p content))
-                  (string-empty-p new-content) grid-underline))))
-      (and border border-face (grid--apply-face line border-face))
-      (plist-put box :content new-content)
-      (grid--insert-hspacing (nth 3 margin))
-      (insert line)
-      (grid--insert-hspacing (nth 1 margin)))))
+    (let ((beg (point))
+          (border-face
+           (append
+            ;; first line?
+            (and (= start-marker 0) grid-overline)
+            ;; in body?
+            (and (/= start-marker end-marker) grid-vertical-borders)
+            ;; last line?
+            (and (< (- end-marker start-marker) width)
+                 grid-underline)))
+          (end (min (+ start-marker width
+                       (car (nth 1 margin))
+                       (car (nth 3 margin)))
+                    end-marker)))
+      (insert (format (format "%% -%ds" width)
+                      (substring content start-marker end)))
+      (and border border-face
+           (add-face-text-property beg (point) border-face t))
+      (plist-put box :start-marker (min (1+ end) end-marker)))))
 
 (defun grid--insert-row (row)
   "Insert ROW in the current buffer."
   (let ((normalized-row (seq-map #'grid--normalize-box row)))
     (while (seq-some #'grid-content-not-empty-p normalized-row)
-      (dolist (box normalized-row)
-        (let* ((margin (plist-get box :margin))
-               (horizontal-space (+ (plist-get box :width)
-                                    (car (nth 1 margin))
-                                    (car (nth 3 margin)))))
-          (grid--insert-vspacing (nth 0 margin) horizontal-space)))
       (mapc #'grid--insert-box-line normalized-row)
-      (insert ?\n)
-      (dolist (box normalized-row)
-        (let* ((margin (plist-get box :margin))
-               (horizontal-space (+ (plist-get box :width)
-                                    (car (nth 1 margin))
-                                    (car (nth 3 margin)))))
-          (grid--insert-vspacing (nth 2 margin) horizontal-space))))
+      (insert ?\n))
     (delete-char -1)))
 
 (defsubst grid--trim-line ()
@@ -258,7 +255,7 @@ If the length of the longest line is 0, return 1."
      (beginning-of-line)
      (insert-char ?\s space))))
 
-(defun grid--align-lines (align padding-left padding-right)
+(defun grid--align-lines (align padding-left padding-right margin-left margin-right)
   "Align lines in the current buffer with ALIGN.
 ALIGN values: `left' (default), `right', `center', `full'."
   (interactive "P")
@@ -290,9 +287,11 @@ ALIGN values: `left' (default), `right', `center', `full'."
                    (setq space (+ fill-column space)))))
              (grid--align-line align space)
              (beginning-of-line)
+             (grid--insert-hspacing margin-left)
              (grid--insert-hspacing padding-left)
              (end-of-line)
              (grid--insert-hspacing padding-right)
+             (grid--insert-hspacing margin-right)
              (forward-line 1)
              (not (eobp))))))
 
@@ -506,17 +505,10 @@ ALIGN values: `left' (default), `right', `center', `full'."
 
 (defun grid-insert-box (box)
   "Insert BOX in the current buffer."
-  (let* ((box (grid--normalize-box box))
-         (margin (plist-get box :margin))
-         (width (plist-get box :width))
-         (horizontal-space (+ width
-                              (car (nth 1 margin))
-                              (car (nth 3 margin)))))
-    (grid--insert-vspacing (nth 0 margin) horizontal-space)
+  (let ((box (grid--normalize-box box)))
     (while (grid-content-not-empty-p box)
       (grid--insert-box-line box)
       (insert-char ?\n))
-    (grid--insert-vspacing (nth 2 margin) horizontal-space)
     (delete-char -1)))
 
 (defun grid-make-box (box)
