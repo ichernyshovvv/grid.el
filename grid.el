@@ -492,6 +492,8 @@ ALIGN values: `left' (default), `right', `center', `full'."
 
 (defun grid--delayed-revert (&optional window)
   "Revert currently displayed grid buffers with delay of `grid-revert-delay' seconds."
+  (cancel-timer grid--timer)
+  (timer-activate grid--timer)
   (timer-set-time grid--timer (time-add nil grid-revert-delay)))
 
 (defun grid--revert-maybe ()

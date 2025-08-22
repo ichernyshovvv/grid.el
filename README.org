@@ -46,6 +46,25 @@ possible to select the text only within desired box:
 
 #+html: <div align=center><img width="500" src='selection.gif'/></div>
 
+If =grid-revert-on-width-change= is =t=, buffers containing grids with
+=:width= set as percentage will be updated each time window size is
+changed:
+
+#+begin_src elisp
+(progn
+  (setopt grid-revert-on-width-change t)
+  (load "test/strings.el")
+  (grid-insert-column
+   `(,(grid-make-row `(( :content ,test-grid-1-line :width .2 :border t)
+                       ( :content ,test-grid-1-line :padding (1 . ?#)
+                         :width .15 :align center :margin (0 2))
+                       ( :content ,test-grid-1-line :width .2 :align right
+                         :border t)))
+     ( :content ,test-grid-1-line :padding (1 . ?·) :width .58))))
+#+end_src
+
+#+html: <div align=center><img width="500" src='autorevert.gif'/></div>
+
 See ~test/~ for examples.
 
 * API
