@@ -4,9 +4,10 @@
   (should
    (equal
     (concat "\n"
-            (grid-make-row `((:content ,test-grid-1-line :width 20)
-                             (:content ,test-grid-1-line :width 15 :align center)
-                             (:content ,test-grid-1-line :width 20 :align right)))
+            (substring-no-properties
+             (grid-make-row `((:content ,test-grid-1-line :width 20)
+                              (:content ,test-grid-1-line :width 15 :align center)
+                              (:content ,test-grid-1-line :width 20 :align right))))
 )
     "
 Fusce sagittis,     Fusce sagittis,     Fusce sagittis,
@@ -22,10 +23,11 @@ volutpat.            nulla lacinia            volutpat.
   (should
    (equal
     (concat "\n"
-            (grid-make-row `((:content ,test-grid-1-line :width 20)
-                             (:content ,test-grid-1-line :padding (1 . ?#)
-                                       :width 15 :align center)
-                             (:content ,test-grid-1-line :width 20 :align right))))
+            (substring-no-properties
+             (grid-make-row `((:content ,test-grid-1-line :width 20)
+                              (:content ,test-grid-1-line :padding (1 . ?#)
+                                        :width 15 :align center)
+                              (:content ,test-grid-1-line :width 20 :align right)))))
     "
 Fusce sagittis,     ###############     Fusce sagittis,
 libero non molestie #    Fusce    # libero non molestie
@@ -40,4 +42,55 @@ volutpat.           #  dolor, at  #           volutpat.
                     #lacinia eros.#                    
                     # Aliquam erat#                    
                     #  volutpat.  #                    
-                    ###############                    ")))
+                    ###############                    "))
+
+  (should
+   (equal
+    (concat "\n"
+            (substring-no-properties
+             (grid-make-row `((:content ,test-grid-1-line :width 20)
+                              (:content ,test-grid-1-line :padding (1 . ?#)
+                                        :width 15 :align center :margin (1 . ?*))
+                              (:content ,test-grid-1-line :width 20 :align right)))))
+    "
+Fusce sagittis,     *****************     Fusce sagittis,
+libero non molestie *###############* libero non molestie
+mollis, magna orci  *#    Fusce    #*  mollis, magna orci
+ultrices dolor, at  *#  sagittis,  #*  ultrices dolor, at
+vulputate neque     *#  libero non #*     vulputate neque
+nulla lacinia eros. *#   molestie  #* nulla lacinia eros.
+Aliquam erat        *#mollis, magna#*        Aliquam erat
+volutpat.           *#orci ultrices#*           volutpat.
+                    *#  dolor, at  #*                    
+                    *#  vulputate  #*                    
+                    *# neque nulla #*                    
+                    *#lacinia eros.#*                    
+                    *# Aliquam erat#*                    
+                    *#  volutpat.  #*                    
+                    *###############*                    
+                    *****************                    "))
+  (should
+   (equal
+    (concat "\n"
+            (substring-no-properties
+             (grid-make-row `((:content ,test-grid-1-line :width 20)
+                              (:content ,test-grid-1-line :width 20 :align right)
+                              (:content ,test-grid-1-line :padding (1 . ?#)
+                                        :width 15 :align center :margin (1 . ?*))))))
+    "
+Fusce sagittis,          Fusce sagittis,*****************
+libero non molestie  libero non molestie*###############*
+mollis, magna orci    mollis, magna orci*#    Fusce    #*
+ultrices dolor, at    ultrices dolor, at*#  sagittis,  #*
+vulputate neque          vulputate neque*#  libero non #*
+nulla lacinia eros.  nulla lacinia eros.*#   molestie  #*
+Aliquam erat                Aliquam erat*#mollis, magna#*
+volutpat.                      volutpat.*#orci ultrices#*
+                                        *#  dolor, at  #*
+                                        *#  vulputate  #*
+                                        *# neque nulla #*
+                                        *#lacinia eros.#*
+                                        *# Aliquam erat#*
+                                        *#  volutpat.  #*
+                                        *###############*
+                                        *****************")))
