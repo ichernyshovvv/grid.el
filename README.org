@@ -86,23 +86,29 @@ BOX formats:
 
 - plist. Properties:
 
-  :content - string to be inserted in the box
+  =:content= - string to be inserted in the box
 
   Optional:
     
-    :align
-    center
-    left (default)
-    right
+    =:align= - content alignment
+    - ~center~
+    - ~left~ (default)
+    - ~right~
     
-    :width
-    "50%"
-    integer (number of characters)
+    =:width= - width of the box
+    - ~float~ [0.5, .3] - width as a percentage of the current window
+    - ~integer~ - number of characters
 
-    :border
-    nil or t
+    =:border=
+    - ~boolean~
 
-    :padding - horizontal padding
-    integer (number of characters)
+    =:padding= - space between the content and the border
+    Side formats (can be used as a value. in that case, all 4 sides will use it):
+    - ~integer~ - number of whitespace characters
+    - ~(integer . character)~ - number of specified characters
 
-  
+    List formats:
+    - ~(top right bottom left)~ - each side can be an integer or a cons pair
+    - ~(vertical horizontal)~ - shortened version, where top = bottom, left = right
+
+    =:margin= - space outside of the box. Has the same format as =:padding=.
