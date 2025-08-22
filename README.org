@@ -13,34 +13,22 @@
 This library allows you to put text data into boxes and align them horizontally,
 applying margin, padding, borders.
 
-A snippet from grid-examples.el. Evaluate it in a buffer at the first character
-of some line:
+Evaluate it in a buffer at the first character of some line:
 
 #+begin_src elisp
-(grid-insert-content
- `(((:content ,grid-multiline-str :width 10 :border t :padding 1)
-    (:content ,grid-lipsum-2 :width "33%" :padding 2)
-    (:content ,grid-lipsum :width "33%" :padding 3))
-   ((:content ,grid-multiline-str :width "49%" :border t :padding 1)
-    (:content ,grid-lipsum :width "49%" :border t :padding 10))))
+(progn
+  (load "test/strings.el")
+  (grid-insert-row `(( :content ,test-grid-1-line :width 20 :border t)
+                     ( :content ,test-grid-1-line :padding (1 . ?#)
+                       :width 15 :align center :margin (0 2))
+                     ( :content ,test-grid-1-line :width 20 :align right
+                       :border t))))
 #+end_src
 
 Result:
-#+html: <div align=center><img src='image.png'/></div>
+#+html: <div align=center><img width="500" src='image.png'/></div>
 
-You can wrap into a box any text you want. Any text properties will be
-saved. For example, this is a combination of [[https:https://github.com/ichernyshovvv/light-dashboard][light-dashboard]] and some other
-text:
-
-#+begin_src elisp
-(grid-insert-content
- `(((:content ,grid-calendar :width 24 :border t :padding 1)
-    (:content ,light-dashboard-dashboard-string :width 40)
-    (:content ,grid-lipsum :width 40 :border 1 :padding 1))))
-#+end_src
-
-Result:
-#+html: <div align=center><img src='image-with-light-dashboard.png'></div>
+See ~test/~ for examples.
 
 * API
 :PROPERTIES:
