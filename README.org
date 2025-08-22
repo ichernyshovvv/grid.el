@@ -28,6 +28,24 @@ Evaluate it in a buffer at the first character of some line:
 Result:
 #+html: <div align=center><img width="500" src='image.png'/></div>
 
+With =grid-text-selection-mode= (local minor mode) enabled, it's
+possible to select the text only within desired box:
+
+#+begin_src elisp
+(progn
+  (load "test/strings.el")
+  (grid-text-selection-mode)
+  (grid-insert-column
+   `(,(grid-make-row `(( :content ,test-grid-1-line :width 20 :border t)
+                       ( :content ,test-grid-1-line :padding (1 . ?#)
+                         :width 15 :align center :margin (0 2))
+                       ( :content ,test-grid-1-line :width 20 :align right
+                         :border t)))
+     ( :content ,test-grid-1-line :padding (1 . ?·) :width 59))))
+#+end_src
+
+#+html: <div align=center><img width="500" src='selection.gif'/></div>
+
 See ~test/~ for examples.
 
 * API
