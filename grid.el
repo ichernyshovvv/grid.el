@@ -87,18 +87,18 @@
   (map-let ((:content content) (:content-width content-width)
             (:width width) (:padding padding) (:margin margin))
       box
-    (pcase-let ((`(,padding-top ,_ ,padding-bottom) padding)
-                (`(,margin-top ,margin-right ,margin-bottom ,margin-left) margin))
+    (seq-let (margin-top margin-right margin-bottom margin-left) margin
       (with-current-buffer (get-buffer-create "*grid-fill*")
         (let ((vmargin-length (+ (car margin-right)
                                  (car margin-left)
                                  width))
               indent-tabs-mode sentence-end-double-space)
           (erase-buffer)
-          (grid--insert-vspacing padding-top content-width)
           (setq fill-column content-width)
-          (insert content)
-          (grid--insert-vspacing padding-bottom content-width t)
+          (seq-let (padding-top _ padding-bottom) padding
+            (grid--insert-vspacing padding-top content-width)
+            (insert content)
+            (grid--insert-vspacing padding-bottom content-width t))
           (goto-char (point-min))
           (grid--align-lines box)
           (put-text-property 1 2 'grid-box-filled t)
