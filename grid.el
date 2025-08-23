@@ -87,25 +87,23 @@
   (map-let ((:content content) (:content-width content-width)
             (:width width) (:padding padding) (:margin margin))
       box
-    (seq-let (margin-top margin-right margin-bottom margin-left) margin
+    (pcase-let ((`(,ptop ,_ ,pbottom ,_) padding)
+                (`(,mtop ,mright ,mbottom ,mleft) margin))
       (with-current-buffer (get-buffer-create "*grid-fill*")
-        (let ((vmargin-length (+ (car margin-right)
-                                 (car margin-left)
-                                 width))
+        (let ((vmargin-length (+ (car mright) (car mleft) width))
               indent-tabs-mode sentence-end-double-space)
           (erase-buffer)
           (setq fill-column content-width)
-          (seq-let (padding-top _ padding-bottom) padding
-            (grid--insert-vspacing padding-top content-width)
-            (insert content)
-            (grid--insert-vspacing padding-bottom content-width t))
+          (grid--insert-vspacing ptop content-width)
+          (insert content)
+          (grid--insert-vspacing pbottom content-width t)
           (goto-char (point-min))
           (grid--align-lines box)
           (put-text-property 1 2 'grid-box-filled t)
           (goto-char (point-min))
-          (grid--insert-vspacing margin-top vmargin-length)
+          (grid--insert-vspacing mtop vmargin-length)
           (goto-char (point-max))
-          (grid--insert-vspacing margin-bottom vmargin-length t)
+          (grid--insert-vspacing mbottom vmargin-length t)
           (buffer-string))))))
 
 (defun grid--longest-line-length (string)
@@ -185,7 +183,7 @@ If the length of the longest line is 0, return 1."
                     i))))))
     (map-let ((:content content) (:width width) (:padding padding))
         box
-      (pcase-let ((`( ,_ (,pright . ,_) ,_ (,pleft . ,_)) padding))
+      (pcase-let ((`(,_ (,pright . ,_) ,_ (,pleft . ,_)) padding))
         (let* ((id-of-box-inside
                 (with-temp-buffer
                   (insert content)
@@ -271,8 +269,8 @@ ALIGN values: `left' (default), `right', `center', `full'."
             (:start-marker start-marker) (:end-marker end-marker)
             (:margin margin) (:border border) (:width width))
       box
-    (pcase-let ((`(,_ ,padding-right ,_ ,padding-left) padding)
-                (`(,_ ,margin-right ,_ ,margin-left) margin))
+    (pcase-let ((`(,_ ,pright ,_ ,pleft) padding)
+                (`(,_ ,mright ,_ ,mleft) margin))
       box
       (let (space last-line)
         ;; mark newlines from original text
@@ -306,7 +304,7 @@ ALIGN values: `left' (default), `right', `center', `full'."
         (goto-char (point-min))
         (setq last-line (line-number-at-pos (1- (point-max))))
         (while (progn
-                 (grid--insert-hspacing margin-left)
+                 (grid--insert-hspacing mleft)
                  (let* ((beg (point))
                         (current-line (line-number-at-pos))
                         (border-face
@@ -314,13 +312,13 @@ ALIGN values: `left' (default), `right', `center', `full'."
                           (and (= current-line 1) grid-overline)
                           grid-vertical-borders
                           (and (= current-line last-line) grid-underline))))
-                   (grid--insert-hspacing padding-left)
+                   (grid--insert-hspacing pleft)
                    (end-of-line)
-                   (grid--insert-hspacing padding-right)
+                   (grid--insert-hspacing pright)
                    (and border
                         border-face
                         (add-face-text-property beg (point) border-face t)))
-                 (grid--insert-hspacing margin-right)
+                 (grid--insert-hspacing mright)
                  (forward-line 1)
                  (not (eobp))))))))
 
