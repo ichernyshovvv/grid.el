@@ -88,12 +88,11 @@
             (:width width) (:padding padding) (:margin margin))
       box
     (pcase-let ((`(,padding-top ,_ ,padding-bottom) padding)
-                (`(,margin-top ,_ ,margin-bottom) margin))
+                (`(,margin-top ,margin-right ,margin-bottom ,margin-left) margin))
       (with-current-buffer (get-buffer-create "*grid-fill*")
-        (let ((horizontal-space
-               (+ width
-                  (car (nth 1 margin))
-                  (car (nth 3 margin))))
+        (let ((vmargin-length (+ (car margin-right)
+                                 (car margin-left)
+                                 width))
               indent-tabs-mode sentence-end-double-space)
           (erase-buffer)
           (grid--insert-vspacing padding-top content-width)
@@ -104,9 +103,9 @@
           (grid--align-lines box)
           (put-text-property 1 2 'grid-box-filled t)
           (goto-char (point-min))
-          (grid--insert-vspacing margin-top horizontal-space)
+          (grid--insert-vspacing margin-top vmargin-length)
           (goto-char (point-max))
-          (grid--insert-vspacing margin-bottom horizontal-space t)
+          (grid--insert-vspacing margin-bottom vmargin-length t)
           (buffer-string))))))
 
 (defun grid--longest-line-length (string)
