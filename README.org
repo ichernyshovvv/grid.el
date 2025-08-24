@@ -27,7 +27,7 @@ Evaluate it in a buffer at the first character of some line:
 #+end_src
 
 Result:
-#+html: <div align=center><img width="500" src='image.png'/></div>
+#+html: <div align=center><img width="500" src='example-1.png'/></div>
 
 With =grid-text-selection-mode= (local minor mode) enabled, it's
 possible to select the text only within desired box:
@@ -129,6 +129,7 @@ BOX formats:
     - ~boolean~
 
     =:padding= - space between the content and the border
+
     Side formats (can be used as a value. in that case, all 4 sides will use it):
     - ~integer~ - number of whitespace characters
     - ~(integer . character)~ - number of specified characters
