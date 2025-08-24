@@ -3,10 +3,10 @@
 ;; Copyright (C) 2024  Ilya Chernyshov
 
 ;; Author: Ilya Chernyshov <ichernyshovvv@gmail.com>
-;; Version: 0.1-pre
+;; Version: 0.1
 ;; Package-Requires: ((emacs "29.1"))
 ;; Keywords: tools, docs, layout
-;; URL: https://github.com/ichernyshovvv/grid
+;; URL: https://github.com/ichernyshovvv/grid.el
 
 ;;; License:
 
