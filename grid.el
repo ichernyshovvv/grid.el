@@ -1,4 +1,4 @@
-;;; grid.el --- Simple grid layout -*- lexical-binding: t; -*-
+;;; grid.el --- Two-dimensional layout system -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2024  Ilya Chernyshov
 
@@ -25,27 +25,8 @@
 
 ;;; Commentary:
 
-;; USAGE:
-;; (grid-insert-rows '(ROW ROW ...))
-;; ROW: '(BOX BOX ...)
-;; BOX: plist.  Acceptable properties:
-
-;;   border
-;;   nil or t
-
-;;   width
-;;   "50%"
-;;   integer (number of characters)
-
-;;   padding-left - left padding
-;;   padding-right - right padding
-;;   integer (number of spaces)
-
-;;   margin-left
-;;   margin-right
-;;   integer (number of spaces)
-
-;;   content - string to be inserted in the box
+;; grid.el provides a two-dimensional layout system that you can use
+;; to arrange text into blocks, rows or columns of blocks.
 
 ;;; Code:
 

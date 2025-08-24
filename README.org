@@ -10,8 +10,9 @@
 :CUSTOM_ID: description
 :END:
 
-This library allows you to put text data into boxes and align them horizontally,
-applying margin, padding, borders.
+This library provides a two-dimensional layout system that you can use
+to arrange text into blocks, rows or columns of blocks, applying
+different display properties (:align, :margin, :padding, :border, etc)
 
 Evaluate it in a buffer at the first character of some line:
 
