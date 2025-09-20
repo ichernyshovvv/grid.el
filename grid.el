@@ -247,8 +247,7 @@ If the length of the longest line is 0, return 1."
 ALIGN values: `left' (default), `right', `center', `full'."
   (interactive "P")
   (map-let ((:align align) (:padding padding)
-            (:start-marker start-marker) (:end-marker end-marker)
-            (:margin margin) (:border border) (:width width))
+            (:margin margin) (:border border))
       box
     (pcase-let ((`(,_ ,pright ,_ ,pleft) padding)
                 (`(,_ ,mright ,_ ,mleft) margin)
