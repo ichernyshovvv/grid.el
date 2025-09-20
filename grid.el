@@ -251,57 +251,56 @@ ALIGN values: `left' (default), `right', `center', `full'."
             (:margin margin) (:border border) (:width width))
       box
     (pcase-let ((`(,_ ,pright ,_ ,pleft) padding)
-                (`(,_ ,mright ,_ ,mleft) margin))
-      box
-      (let (space last-line)
-        ;; mark newlines from original text
-        (unless (or (eobp) (get-text-property 1 'grid-box-filled))
-          (while (search-forward "\n" (1- (point-max)) t)
-            (put-text-property (point) (1+ (point)) 'grid-box-newline t)
-            (when (eolp)
-              (insert-char ?\s)
-              (add-text-properties
-               (1- (point)) (point)
-               `( grid-box-emptyline t
-                  grid-box-newline t
-                  grid-box-uuid ,(get-text-property (point-min) 'grid-box-uuid))))))
-        (goto-char (point-min))
-        (while (progn
-                 (if align (grid--trim-line) (end-of-line))
-                 (setq space (- fill-column (current-column)))
-                 (when (< space 0)
-                   (let ((beg (line-beginning-position)))
-                     (fill-region beg (line-end-position) align)
-                     (goto-char beg)
-                     (grid--trim-line)
-                     (setq space (- fill-column (current-column)))
-                     (when (< space 0)
-                       (forward-char space)
-                       (insert ?\n)
-                       (setq space (+ fill-column space)))))
-                 (grid--align-line align space)
-                 (forward-line 1)
-                 (not (eobp))))
-        (goto-char (point-min))
-        (setq last-line (line-number-at-pos (1- (point-max))))
-        (while (progn
-                 (grid--insert-hspacing mleft)
-                 (let* ((beg (point))
-                        (current-line (line-number-at-pos))
-                        (border-face
-                         (append
-                          (and (= current-line 1) grid-overline)
-                          grid-vertical-borders
-                          (and (= current-line last-line) grid-underline))))
-                   (grid--insert-hspacing pleft)
-                   (end-of-line)
-                   (grid--insert-hspacing pright)
-                   (and border
-                        border-face
-                        (add-face-text-property beg (point) border-face t)))
-                 (grid--insert-hspacing mright)
-                 (forward-line 1)
-                 (not (eobp))))))))
+                (`(,_ ,mright ,_ ,mleft) margin)
+                (space) (last-line))
+      ;; mark newlines from original text
+      (unless (or (eobp) (get-text-property 1 'grid-box-filled))
+        (while (search-forward "\n" (1- (point-max)) t)
+          (put-text-property (point) (1+ (point)) 'grid-box-newline t)
+          (when (eolp)
+            (insert-char ?\s)
+            (add-text-properties
+             (1- (point)) (point)
+             `( grid-box-emptyline t
+                grid-box-newline t
+                grid-box-uuid ,(get-text-property (point-min) 'grid-box-uuid))))))
+      (goto-char (point-min))
+      (while (progn
+               (if align (grid--trim-line) (end-of-line))
+               (setq space (- fill-column (current-column)))
+               (when (< space 0)
+                 (let ((beg (line-beginning-position)))
+                   (fill-region beg (line-end-position) align)
+                   (goto-char beg)
+                   (grid--trim-line)
+                   (setq space (- fill-column (current-column)))
+                   (when (< space 0)
+                     (forward-char space)
+                     (insert ?\n)
+                     (setq space (+ fill-column space)))))
+               (grid--align-line align space)
+               (forward-line 1)
+               (not (eobp))))
+      (goto-char (point-min))
+      (setq last-line (line-number-at-pos (1- (point-max))))
+      (while (progn
+               (grid--insert-hspacing mleft)
+               (let* ((beg (point))
+                      (current-line (line-number-at-pos))
+                      (border-face
+                       (append
+                        (and (= current-line 1) grid-overline)
+                        grid-vertical-borders
+                        (and (= current-line last-line) grid-underline))))
+                 (grid--insert-hspacing pleft)
+                 (end-of-line)
+                 (grid--insert-hspacing pright)
+                 (and border
+                      border-face
+                      (add-face-text-property beg (point) border-face t)))
+               (grid--insert-hspacing mright)
+               (forward-line 1)
+               (not (eobp)))))))
 
 (defun grid--extract-content (arg)
   (pcase arg
