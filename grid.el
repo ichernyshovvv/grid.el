@@ -164,38 +164,38 @@ If the length of the longest line is 0, return 1."
                     i))))))
     (map-let ((:content content) (:width width) (:padding padding))
         box
-      (pcase-let ((`(,_ (,pright . ,_) ,_ (,pleft . ,_)) padding))
-        (let* ((id-of-box-inside
-                (with-temp-buffer
-                  (insert content)
-                  (goto-char (point-min))
-                  (text-property-search-forward 'grid-box-uuid)))
-               (uuid (or id-of-box-inside (grid--uuid)))
-               (width (max
-                       (grid--normalize-width
-                        (or width
-                            (+ (grid--longest-line-length content)
-                               pleft pright)))
-                       2)))
-          (setq box
-                (grid--merge-plists
-                 box
-                 (list
-                  :width width
-                  :content-width (max 2 (- width pleft pright))
-                  :uuid uuid)))
-          (let ((new-content
-                 (progn
-                   (unless id-of-box-inside
-                     (setf (plist-get box :content)
-                           (propertize content 'grid-box-uuid uuid)))
-                   (grid--reformat-content box))))
-            (grid--merge-plists
-             box
-             (list
-              :start-marker 0
-              :end-marker (length new-content)
-              :content new-content))))))))
+      (pcase-let* ((`(,_ (,pright . ,_) ,_ (,pleft . ,_)) padding)
+                   (id-of-box-inside
+                    (with-temp-buffer
+                      (insert content)
+                      (goto-char (point-min))
+                      (text-property-search-forward 'grid-box-uuid)))
+                   (uuid (or id-of-box-inside (grid--uuid)))
+                   (width (max
+                           (grid--normalize-width
+                            (or width
+                                (+ (grid--longest-line-length content)
+                                   pleft pright)))
+                           2)))
+        (setq box
+              (grid--merge-plists
+               box
+               (list
+                :width width
+                :content-width (max 2 (- width pleft pright))
+                :uuid uuid)))
+        (let ((new-content
+               (progn
+                 (unless id-of-box-inside
+                   (setf (plist-get box :content)
+                         (propertize content 'grid-box-uuid uuid)))
+                 (grid--reformat-content box))))
+          (grid--merge-plists
+           box
+           (list
+            :start-marker 0
+            :end-marker (length new-content)
+            :content new-content)))))))
 
 (defun grid--insert-box-line (box)
   "Format line from BOX and insert it."
