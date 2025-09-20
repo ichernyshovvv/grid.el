@@ -439,6 +439,11 @@ ALIGN values: `left' (default), `right', `center', `full'."
     (overlay-put rol 'grid-active-region-start nil)
     (overlay-put rol 'grid-active-region-end nil)))
 
+(defgroup grid nil
+  "Customization for `grid'."
+  :group 'display
+  :link '(url-link "https://github.com/ichernyshovvv/grid.el"))
+
 (defcustom grid-revert-delay 0.3
   "Seconds to wait before redisplaying buffers with grid blocks."
   :type 'float)
