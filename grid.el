@@ -247,7 +247,8 @@ If the length of the longest line is 0, return 1."
 ALIGN values: `left' (default), `right', `center', `full'."
   (interactive "P")
   (map-let ((:align align) (:padding padding)
-            (:margin margin) (:border border))
+            (:margin margin) (:border border)
+            (:face face))
       box
     (pcase-let ((`(,_ ,pright ,_ ,pleft) padding)
                 (`(,_ ,mright ,_ ,mleft) margin)
@@ -294,6 +295,9 @@ ALIGN values: `left' (default), `right', `center', `full'."
                  (grid--insert-hspacing pleft)
                  (end-of-line)
                  (grid--insert-hspacing pright)
+                 (and face
+                      (add-face-text-property
+                       (line-beginning-position) (point) face t))
                  (and border
                       border-face
                       (add-face-text-property beg (point) border-face t)))
