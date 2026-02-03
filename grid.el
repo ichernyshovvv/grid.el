@@ -54,12 +54,16 @@
    0 (length string)
    face t string))
 
-(defun grid--normalize-width (width)
+(defun grid--normalize-width (width &optional decimals)
   "Normalize WIDTH."
   (cond
    ((floatp width)
-    (floor (* (window-width (get-buffer-window))
-              width)))
+    (let ((new-width (* (window-width (get-buffer-window)) width)))
+      (if decimals
+          (setcdr
+           (last decimals)
+           (list (- new-width (truncate new-width)))))
+      (floor new-width)))
    ((integerp width) width)
    (t (error "Wrong width format"))))
 
@@ -216,6 +220,18 @@ If the length of the longest line is 0, return 1."
 
 (defun grid--insert-row (row)
   "Insert ROW in the current buffer."
+  (and-let* ((float-width-box
+              (cl-position-if
+               (lambda (box) (floatp (plist-get box :width)))
+               row))
+             (decimals (list 0)))
+    (setq row (copy-tree row))
+    (dolist (box row)
+      (if (plist-get box :width)
+          (cl-callf grid--normalize-width
+              (plist-get box :width) decimals)))
+    (cl-incf (plist-get (nth float-width-box row) :width)
+             (round (apply #'+ decimals))))
   (let ((normalized-row (seq-map #'grid--normalize-box row)))
     (while (seq-some #'grid-content-not-empty-p normalized-row)
       (mapc #'grid--insert-box-line normalized-row)
