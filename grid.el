@@ -103,6 +103,24 @@ If the length of the longest line is 0, return 1."
   (apply-partially #'map-merge-with 'plist (lambda (_ x) x))
   "Merge plists, the last one takes precedence.")
 
+(defun grid--normalize-fields (box)
+  (dolist (p '(:padding :margin))
+    (let ((l (plist-get box p)))
+      (setf (plist-get box p)
+            (cl-loop
+             for side in '(top right bottom left)
+             for i in (pcase (proper-list-p l)
+                        (4 l)
+                        (2 `(,@l ,@l))
+                        (0 '(nil nil nil nil))
+                        ('nil (make-list 4 l))
+                        (_ (error "Wrong `%s' format" p)))
+             collect
+             (grid--normalize-field
+              (or (plist-get box (intern (format "%s-%s" p side)))
+                  i))))))
+  box)
+
 (defun grid--uuid ()
   "Return string with random (version 4) UUID."
   ;; This is a copy of `org-id-uuid'.
@@ -149,23 +167,9 @@ If the length of the longest line is 0, return 1."
 
 (defun grid--normalize-box (box)
   "Normalize BOX to plist."
-  (let ((box (cond ((plistp box) (copy-tree box))
-                   ((stringp box) (list :content box)))))
-    (dolist (p '(:padding :margin))
-      (let ((l (plist-get box p)))
-        (setf (plist-get box p)
-              (cl-loop
-               for side in '(top right bottom left)
-               for i in (pcase (proper-list-p l)
-                          (4 l)
-                          (2 `(,@l ,@l))
-                          (0 '(nil nil nil nil))
-                          ('nil (make-list 4 l))
-                          (_ (error "Wrong `%s' format" p)))
-               collect
-               (grid--normalize-field
-                (or (plist-get box (intern (format "%s-%s" p side)))
-                    i))))))
+  (let ((box (grid--normalize-fields
+              (cond ((plistp box) (copy-tree box))
+                    ((stringp box) (list :content box))))))
     (map-let ((:content content) (:width width) (:padding padding)
               (:min-width min-width))
         box
