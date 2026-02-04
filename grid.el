@@ -220,6 +220,21 @@ If the length of the longest line is 0, return 1."
                       (substring content start-marker end)))
       (plist-put box :start-marker (min (1+ end) end-marker)))))
 
+(defun grid--add-lost-width (row)
+  (and-let* ((float-width-box
+              (cl-position-if
+               (lambda (box) (floatp (plist-get box :width)))
+               row))
+             (decimals (list 0)))
+    (setq row (copy-tree row))
+    (dolist (box row)
+      (if (plist-get box :width)
+          (cl-callf grid--normalize-width
+              (plist-get box :width) decimals)))
+    (cl-incf (plist-get (nth float-width-box row) :width)
+             (round (apply #'+ decimals))))
+  row)
+
 (defun grid--normalize-row-width (row)
   (let* ((min-width (cl-loop for box in row sum
                              (grid--normalize-width
@@ -253,20 +268,10 @@ If the length of the longest line is 0, return 1."
 
 (defun grid--insert-row (row)
   "Insert ROW in the current buffer."
-  (setq row (grid--normalize-row-width row))
-  (and-let* ((float-width-box
-              (cl-position-if
-               (lambda (box) (floatp (plist-get box :width)))
-               row))
-             (decimals (list 0)))
-    (setq row (copy-tree row))
-    (dolist (box row)
-      (if (plist-get box :width)
-          (cl-callf grid--normalize-width
-              (plist-get box :width) decimals)))
-    (cl-incf (plist-get (nth float-width-box row) :width)
-             (round (apply #'+ decimals))))
-  (let ((normalized-row (seq-map #'grid--normalize-box row)))
+  (let ((normalized-row (thread-last
+                          (grid--normalize-row-width row)
+                          (grid--add-lost-width)
+                          (seq-map #'grid--normalize-box))))
     (while (seq-some #'grid-content-not-empty-p normalized-row)
       (mapc #'grid--insert-box-line normalized-row)
       (insert ?\n))
