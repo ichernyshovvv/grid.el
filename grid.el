@@ -220,8 +220,40 @@ If the length of the longest line is 0, return 1."
                       (substring content start-marker end)))
       (plist-put box :start-marker (min (1+ end) end-marker)))))
 
+(defun grid--normalize-row-width (row)
+  (let* ((min-width (cl-loop for box in row sum
+                             (grid--normalize-width
+                              (or (plist-get box :min-width) 0))))
+         (space-available (- (window-width (get-buffer-window))
+                             min-width))
+         (space-needed
+          (cl-loop for box in row sum
+                   (grid--normalize-width
+                    (or (plist-get box :min-width)
+                        (plist-get box :width)
+                        ;; TODO add this later
+                        ;; (+ (grid--longest-line-length content)
+                        ;;    pleft pright)
+                        0)))))
+    (when (< space-available space-needed)
+      (let* ((difference (- space-needed (+ space-available min-width)))
+             (boxes-wo-min-width-count
+              (float
+               (cl-loop for box in row count
+                        (not (plist-get box :min-width)))))
+             (subtract (ceiling (/ difference boxes-wo-min-width-count))))
+        (setq row (copy-tree row))
+        (dolist (box row)
+          (when (and (plist-get box :width)
+                     (not (plist-get box :min-width)))
+            (setf (plist-get box :width)
+                  (- (grid--normalize-width (plist-get box :width))
+                     subtract))))))
+    row))
+
 (defun grid--insert-row (row)
   "Insert ROW in the current buffer."
+  (setq row (grid--normalize-row-width row))
   (and-let* ((float-width-box
               (cl-position-if
                (lambda (box) (floatp (plist-get box :width)))
