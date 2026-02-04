@@ -166,7 +166,8 @@ If the length of the longest line is 0, return 1."
                (grid--normalize-field
                 (or (plist-get box (intern (format "%s-%s" p side)))
                     i))))))
-    (map-let ((:content content) (:width width) (:padding padding))
+    (map-let ((:content content) (:width width) (:padding padding)
+              (:min-width min-width))
         box
       (pcase-let* ((`(,_ (,pright . ,_) ,_ (,pleft . ,_)) padding)
                    (id-of-box-inside
@@ -176,6 +177,7 @@ If the length of the longest line is 0, return 1."
                       (text-property-search-forward 'grid-box-uuid)))
                    (uuid (or id-of-box-inside (grid--uuid)))
                    (width (max
+                           (grid--normalize-width (or min-width 2))
                            (grid--normalize-width
                             (or width
                                 (+ (grid--longest-line-length content)
