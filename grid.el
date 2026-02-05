@@ -167,9 +167,7 @@ If the length of the longest line is 0, return 1."
 
 (defun grid--normalize-box (box)
   "Normalize BOX to plist."
-  (let ((box (grid--normalize-fields
-              (cond ((plistp box) (copy-tree box))
-                    ((stringp box) (list :content box))))))
+  (let ((box (grid--normalize-fields (grid--ensure-plist box))))
     (map-let ((:content content) (:width width) (:padding padding)
               (:min-width min-width))
         box
@@ -274,20 +272,20 @@ If the length of the longest line is 0, return 1."
                      subtract))))))
     row))
 
+(defun grid--ensure-plist (box)
+  "Ensure that BOX is a plist."
+  (cond ((plistp box) (copy-tree box))
+        ((stringp box) (list :content box))))
+
 (defun grid--insert-row (row)
   "Insert ROW in the current buffer."
   (let ((normalized-row
          (thread-last
-           ;; TODO Refactor
-           (mapcar
-            (lambda (box)
-              (cond ((plistp box) (copy-tree box))
-                    ((stringp box) (list :content box))))
-            row)
-           (seq-map #'grid--normalize-fields)
+           (mapcar #'grid--ensure-plist row)
+           (mapcar #'grid--normalize-fields)
            grid--normalize-row-width
            grid--add-lost-width
-           (seq-map #'grid--normalize-box))))
+           (mapcar #'grid--normalize-box))))
     (while (seq-some #'grid-content-not-empty-p normalized-row)
       (mapc #'grid--insert-box-line normalized-row)
       (insert ?\n))
