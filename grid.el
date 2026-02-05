@@ -243,8 +243,12 @@ If the length of the longest line is 0, return 1."
   (let* ((min-width (cl-loop for box in row sum
                              (grid--normalize-width
                               (or (plist-get box :min-width) 0))))
+         (horizontal-margin
+          (cl-loop for box in row sum
+                   (+ (car (nth 1 (plist-get box :margin)))
+                      (car (nth 3 (plist-get box :margin))))))
          (space-available (- (window-width (get-buffer-window))
-                             min-width))
+                             min-width horizontal-margin))
          (space-needed
           (cl-loop for box in row sum
                    (grid--normalize-width
@@ -273,8 +277,9 @@ If the length of the longest line is 0, return 1."
 (defun grid--insert-row (row)
   "Insert ROW in the current buffer."
   (let ((normalized-row (thread-last
-                          (grid--normalize-row-width row)
-                          (grid--add-lost-width)
+                          (seq-map #'grid--normalize-fields row)
+                          grid--normalize-row-width
+                          grid--add-lost-width
                           (seq-map #'grid--normalize-box))))
     (while (seq-some #'grid-content-not-empty-p normalized-row)
       (mapc #'grid--insert-box-line normalized-row)
