@@ -381,9 +381,7 @@ ALIGN values: `left' (default), `right', `center', `full'."
                  (grid--insert-hspacing pleft)
                  (end-of-line)
                  (grid--insert-hspacing pright)
-                 (and face
-                      (add-face-text-property
-                       (line-beginning-position) (point) face t))
+                 (and face (add-face-text-property beg (point) face t))
                  (and border
                       border-face
                       (add-face-text-property beg (point) border-face t)))
