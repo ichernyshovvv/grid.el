@@ -241,6 +241,25 @@ If the length of the longest line is 0, return 1."
              (round (apply #'+ decimals))))
   row)
 
+(defun grid--normalize-row (row)
+  (setq row (copy-tree row))
+  (setf (plist-get row :width)
+        (grid--normalize-width
+         (or (plist-get row :width)
+             (window-width (get-buffer-window)))))
+  (setf (plist-get row :boxes)
+        (mapcar #'grid--ensure-plist (plist-get row :boxes)))
+  (setf (plist-get row :boxes)
+        (mapcar #'grid--normalize-fields (plist-get row :boxes)))
+  (setq row (grid--normalize-row-width row))
+  (setf row (grid--add-lost-width row))
+  (setf (plist-get row :boxes)
+        (mapcar (lambda (box)
+                  (grid--normalize-box
+                   box (plist-get row :width)))
+                (plist-get row :boxes)))
+  row)
+
 (defun grid--normalize-row-width (row)
   (map-let ((:boxes boxes) (:width row-width)) row
     (let* ((minimum-space-required
@@ -297,22 +316,7 @@ If the length of the longest line is 0, return 1."
 
 (defun grid--insert-row (row)
   "Insert ROW in the current buffer."
-  (setq row (copy-tree row))
-  (setf (plist-get row :width)
-        (grid--normalize-width
-         (or (plist-get row :width)
-             (window-width (get-buffer-window)))))
-  (setf (plist-get row :boxes)
-        (mapcar #'grid--ensure-plist (plist-get row :boxes)))
-  (setf (plist-get row :boxes)
-        (mapcar #'grid--normalize-fields (plist-get row :boxes)))
-  (setq row (grid--normalize-row-width row))
-  (setf row (grid--add-lost-width row))
-  (setf (plist-get row :boxes)
-        (mapcar (lambda (box)
-                  (grid--normalize-box
-                   box (plist-get row :width)))
-                (plist-get row :boxes)))
+  (setq row (grid--normalize-row row))
   (while (seq-some #'grid-content-not-empty-p (plist-get row :boxes))
     (mapc #'grid--insert-box-line (plist-get row :boxes))
     (insert ?\n))
