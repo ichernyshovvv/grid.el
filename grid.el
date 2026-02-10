@@ -48,6 +48,15 @@
 (defvar grid-vertical-borders '(:box (:line-width (-1 . 0)))
   "Vertical borders face.")
 
+(defmacro grid-let (args box &rest body)
+  "Bind the variables in ARGS to the properties of BOX, then evaluate BODY."
+  (declare (indent 2) (debug (sexp form body)))
+  (let ((f (gensym)))
+    `(let ((,f ,box))
+       (map-let ,(cl-loop for x in args collect
+                          `(,(intern (format ":%s" x)) ,x))
+           ,@body))))
+
 (defun grid--apply-face (string face)
   "Apply FACE to STRING."
   (add-face-text-property
@@ -71,9 +80,7 @@
 
 (defun grid--reformat-content (box)
   "Reformat CONTENT for a box with CONTENT-WIDTH and align it accoring to ALIGN."
-  (map-let ((:content content) (:content-width content-width)
-            (:width width) (:padding padding) (:margin margin))
-      box
+  (grid-let (content content-width width padding margin) box
     (with-current-buffer (get-buffer-create "*grid-fill*")
       (pcase-let* ((`(,ptop ,_ ,pbottom ,_) padding)
                    (`(,mtop ,mright ,mbottom ,mleft) margin)
@@ -171,9 +178,7 @@ If the length of the longest line is 0, return 1."
     (box &optional (parent-width (window-width (get-buffer-window))))
   "Normalize BOX to plist."
   (let ((box (grid--normalize-fields (grid--ensure-plist box))))
-    (map-let ((:content content) (:width width) (:padding padding)
-              (:min-width min-width))
-        box
+    (grid-let (content width padding min-width) box
       (pcase-let* ((`(,_ (,pright . ,_) ,_ (,pleft . ,_)) padding)
                    (id-of-box-inside
                     (with-temp-buffer
@@ -212,12 +217,7 @@ If the length of the longest line is 0, return 1."
 
 (defun grid--insert-box-line (box)
   "Format line from BOX and insert it."
-  (map-let ((:content content)
-            (:width width)
-            (:margin margin)
-            (:start-marker start-marker)
-            (:end-marker end-marker))
-      box
+  (grid-let (content width margin start-marker end-marker) box
     (let* ((margin-width (+ width
                             (car (nth 1 margin))
                             (car (nth 3 margin))))
@@ -261,7 +261,7 @@ If the length of the longest line is 0, return 1."
   row)
 
 (defun grid--normalize-row-width (row)
-  (map-let ((:boxes boxes) (:width row-width)) row
+  (grid-let (boxes row-width) row
     (let* ((minimum-space-required
             (cl-loop for box in boxes sum
                      (+ (grid--normalize-width
@@ -346,10 +346,7 @@ If the length of the longest line is 0, return 1."
   "Align lines in the current buffer with ALIGN.
 ALIGN values: `left' (default), `right', `center', `full'."
   (interactive "P")
-  (map-let ((:align align) (:padding padding)
-            (:margin margin) (:border border)
-            (:face face))
-      box
+  (grid-let (align padding margin border face) box
     (pcase-let ((`(,_ ,pright ,_ ,pleft) padding)
                 (`(,_ ,mright ,_ ,mleft) margin)
                 (space) (last-line))
