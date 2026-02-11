@@ -79,16 +79,18 @@
    (t (error "Wrong width format"))))
 
 (defun grid--ensure-uuid (box)
-  (let* ((id-of-box-inside
-          (with-temp-buffer
-            (insert content)
-            (goto-char (point-min))
-            (text-property-search-forward 'grid-box-uuid)))
-         (uuid (or id-of-box-inside (grid--uuid))))
-    (plist-put box :uuid uuid)
-    (unless id-of-box-inside
-      (setf (plist-get box :content)
-            (propertize content 'grid-box-uuid uuid)))))
+  (grid-let (content) box
+    (let* ((id-of-box-inside
+            (with-temp-buffer
+              (insert content)
+              (goto-char (point-min))
+              (text-property-search-forward 'grid-box-uuid)))
+           (uuid (or id-of-box-inside (grid--uuid))))
+      (plist-put box :uuid uuid)
+      (unless id-of-box-inside
+        (setf (plist-get box :content)
+              (propertize content 'grid-box-uuid uuid)))
+      box)))
 
 (defun grid--reformat-content (box)
   "Reformat CONTENT for a box with CONTENT-WIDTH and align it accoring to ALIGN."
@@ -186,35 +188,37 @@ If the length of the longest line is 0, return 1."
   "Insert horizontal spacing."
   (insert-char (cdr property) (car property)))
 
-(cl-defun grid--normalize-box
+(cl-defun grid-box--normalize-width
     (box &optional (parent-width (window-width (get-buffer-window))))
+  (grid-let (padding content min-width width) box
+    (pcase-let* ((`(,_ (,pright . ,_) ,_ (,pleft . ,_)) padding))
+      (let ((width (max
+                    (grid--normalize-width
+                     (or min-width 2) nil parent-width)
+                    (grid--normalize-width
+                     (or width
+                         (+ (grid--longest-line-length content)
+                            pleft pright))
+                     nil parent-width)
+                    2)))
+        (grid--merge-plists
+         box
+         (list
+          :content-width (max 2 (- width pleft pright))
+          :width width))))))
+
+(defun grid--normalize-box (box)
   "Normalize BOX to plist."
   (let ((box (grid--normalize-fields (grid--ensure-plist box))))
     (grid--ensure-uuid box)
-    (grid-let (content width padding min-width) box
-      (pcase-let* ((`(,_ (,pright . ,_) ,_ (,pleft . ,_)) padding)
-                   (width (max
-                           (grid--normalize-width
-                            (or min-width 2) nil parent-width)
-                           (grid--normalize-width
-                            (or width
-                                (+ (grid--longest-line-length content)
-                                   pleft pright))
-                            nil parent-width)
-                           2)))
-        (setq box
-              (grid--merge-plists
-               box
-               (list
-                :width width
-                :content-width (max 2 (- width pleft pright)))))
-        (let ((new-content (grid--reformat-content box)))
-          (grid--merge-plists
-           box
-           (list
-            :start-marker 0
-            :end-marker (length new-content)
-            :content new-content)))))))
+    (setq box (grid-box--normalize-width box))
+    (let ((new-content (grid--reformat-content box)))
+      (grid--merge-plists
+       box
+       (list
+        :start-marker 0
+        :end-marker (length new-content)
+        :content new-content)))))
 
 (defun grid--insert-box-line (box)
   "Format line from BOX and insert it."
@@ -236,13 +240,26 @@ If the length of the longest line is 0, return 1."
   (setf (plist-get row :boxes)
         (thread-last (plist-get row :boxes)
                      (mapcar #'grid--ensure-plist)
-                     (mapcar #'grid--normalize-fields)))
+                     (mapcar #'grid--normalize-fields)
+                     (mapcar #'grid--ensure-uuid)))
   (setq row (grid--normalize-row-width row))
   (setf (plist-get row :boxes)
-        (mapcar (lambda (box)
-                  (grid--normalize-box
-                   box (plist-get row :width)))
-                (plist-get row :boxes)))
+        (mapcar
+         (lambda (box)
+           (grid-box--normalize-width
+            box (plist-get row :width)))
+         (plist-get row :boxes)))
+  (setf (plist-get row :boxes)
+        (mapcar
+         (lambda (box)
+           (let ((new-content (grid--reformat-content box)))
+             (grid--merge-plists
+              box
+              (list
+               :start-marker 0
+               :end-marker (length new-content)
+               :content new-content))))
+         (plist-get row :boxes)))
   row)
 
 (defun grid--normalize-row-width (row)
@@ -254,9 +271,6 @@ If the length of the longest line is 0, return 1."
                          (or (plist-get box :min-width)
                              (and (integerp (plist-get box :width))
                                   (plist-get box :width))
-                             ;; TODO add this later
-                             ;; (+ (grid--longest-line-length content)
-                             ;;    pleft pright)
                              0)
                          nil width)
                         (car (nth 1 (plist-get box :margin)))
@@ -265,16 +279,10 @@ If the length of the longest line is 0, return 1."
             (cl-loop for box in boxes sum
                      (if (and (not (plist-get box :min-width))
                               (floatp (plist-get box :width)))
-                         (grid--normalize-width (plist-get box :width)
-                                                nil width)
-                       0
-                       ;; TODO add (floatp (plist-get box
-                       ;; :width)) or better define a
-                       ;; predicate both for this and
-                       ;; minimum-space-required
-                       )))
-           (floats-space-available
-            (- width minimum-space-required))
+                         (grid--normalize-width
+                          (plist-get box :width) nil width)
+                       0)))
+           (floats-space-available (- width minimum-space-required))
            (float-width-box
             (cl-position-if
              (lambda (box) (floatp (plist-get box :width)))
