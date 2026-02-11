@@ -78,6 +78,18 @@
    ((integerp width) width)
    (t (error "Wrong width format"))))
 
+(defun grid--ensure-uuid (box)
+  (let* ((id-of-box-inside
+          (with-temp-buffer
+            (insert content)
+            (goto-char (point-min))
+            (text-property-search-forward 'grid-box-uuid)))
+         (uuid (or id-of-box-inside (grid--uuid))))
+    (plist-put box :uuid uuid)
+    (unless id-of-box-inside
+      (setf (plist-get box :content)
+            (propertize content 'grid-box-uuid uuid)))))
+
 (defun grid--reformat-content (box)
   "Reformat CONTENT for a box with CONTENT-WIDTH and align it accoring to ALIGN."
   (grid-let (content content-width width padding margin) box
@@ -178,14 +190,9 @@ If the length of the longest line is 0, return 1."
     (box &optional (parent-width (window-width (get-buffer-window))))
   "Normalize BOX to plist."
   (let ((box (grid--normalize-fields (grid--ensure-plist box))))
+    (grid--ensure-uuid box)
     (grid-let (content width padding min-width) box
       (pcase-let* ((`(,_ (,pright . ,_) ,_ (,pleft . ,_)) padding)
-                   (id-of-box-inside
-                    (with-temp-buffer
-                      (insert content)
-                      (goto-char (point-min))
-                      (text-property-search-forward 'grid-box-uuid)))
-                   (uuid (or id-of-box-inside (grid--uuid)))
                    (width (max
                            (grid--normalize-width
                             (or min-width 2) nil parent-width)
@@ -200,14 +207,8 @@ If the length of the longest line is 0, return 1."
                box
                (list
                 :width width
-                :content-width (max 2 (- width pleft pright))
-                :uuid uuid)))
-        (let ((new-content
-               (progn
-                 (unless id-of-box-inside
-                   (setf (plist-get box :content)
-                         (propertize content 'grid-box-uuid uuid)))
-                 (grid--reformat-content box))))
+                :content-width (max 2 (- width pleft pright)))))
+        (let ((new-content (grid--reformat-content box)))
           (grid--merge-plists
            box
            (list
