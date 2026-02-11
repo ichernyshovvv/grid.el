@@ -188,6 +188,13 @@ If the length of the longest line is 0, return 1."
   "Insert horizontal spacing."
   (insert-char (cdr property) (car property)))
 
+(defun grid--content-based-width (box)
+  "Calculate width based on content of BOX."
+  (grid-let (padding content) box
+    (pcase-let ((`(,_ (,pright . ,_) ,_ (,pleft . ,_)) padding))
+      (+ (grid--longest-line-length content)
+         pleft pright))))
+
 (cl-defun grid-box--normalize-width
     (box &optional (parent-width (window-width (get-buffer-window))))
   (grid-let (padding content min-width width) box
@@ -196,9 +203,7 @@ If the length of the longest line is 0, return 1."
                     (grid--normalize-width
                      (or min-width 2) nil parent-width)
                     (grid--normalize-width
-                     (or width
-                         (+ (grid--longest-line-length content)
-                            pleft pright))
+                     (or width (grid--content-based-width box))
                      nil parent-width)
                     2)))
         (grid--merge-plists
@@ -282,10 +287,7 @@ If the length of the longest line is 0, return 1."
                                   (not (plist-get box :width))))
                          (grid--normalize-width
                           (or (plist-get box :width)
-                              (grid-let (padding content) box
-                                (pcase-let* ((`(,_ (,pright . ,_) ,_ (,pleft . ,_)) padding))
-                                  (+ (grid--longest-line-length content)
-                                     pleft pright))))
+                              (grid--content-based-width box))
                           nil width)
                        0)))
            (floats-space-available (- width minimum-space-required))
@@ -307,10 +309,7 @@ If the length of the longest line is 0, return 1."
                           (max
                            (let ((box-width
                                   (or (plist-get box :width)
-                                      (grid-let (padding content) box
-                                        (pcase-let* ((`(,_ (,pright . ,_) ,_ (,pleft . ,_)) padding))
-                                          (+ (grid--longest-line-length content)
-                                             pleft pright))))))
+                                      (grid--content-based-width box))))
                              (if (> floats-space-available floats-space-required)
                                  (grid--normalize-width box-width decimals width)
                                (- (grid--normalize-width
