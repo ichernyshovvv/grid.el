@@ -55,7 +55,7 @@
     `(let ((,f ,box))
        (map-let ,(cl-loop for x in args collect
                           `(,(intern (format ":%s" x)) ,x))
-           ,@body))))
+           ,f ,@body))))
 
 (defun grid--apply-face (string face)
   "Apply FACE to STRING."
@@ -226,21 +226,6 @@ If the length of the longest line is 0, return 1."
                       (substring content start-marker end)))
       (plist-put box :start-marker (min (1+ end) end-marker)))))
 
-(defun grid--add-lost-width (row)
-  (and-let* ((float-width-box
-              (cl-position-if
-               (lambda (box) (floatp (plist-get box :width)))
-               row))
-             (decimals (list 0)))
-    (setq row (copy-tree row))
-    (dolist (box row)
-      (if (plist-get box :width)
-          (cl-callf grid--normalize-width (plist-get box :width)
-            decimals (plist-get row :width))))
-    (cl-incf (plist-get (nth float-width-box row) :width)
-             (round (apply #'+ decimals))))
-  row)
-
 (defun grid--normalize-row (row)
   (setq row (copy-tree row))
   (setf (plist-get row :width)
@@ -252,7 +237,6 @@ If the length of the longest line is 0, return 1."
   (setf (plist-get row :boxes)
         (mapcar #'grid--normalize-fields (plist-get row :boxes)))
   (setq row (grid--normalize-row-width row))
-  (setf row (grid--add-lost-width row))
   (setf (plist-get row :boxes)
         (mapcar (lambda (box)
                   (grid--normalize-box
@@ -261,7 +245,8 @@ If the length of the longest line is 0, return 1."
   row)
 
 (defun grid--normalize-row-width (row)
-  (grid-let (boxes row-width) row
+  (setq row (copy-tree row))
+  (grid-let (boxes width) row
     (let* ((minimum-space-required
             (cl-loop for box in boxes sum
                      (+ (grid--normalize-width
@@ -272,7 +257,7 @@ If the length of the longest line is 0, return 1."
                              ;; (+ (grid--longest-line-length content)
                              ;;    pleft pright)
                              0)
-                         nil row-width)
+                         nil width)
                         (car (nth 1 (plist-get box :margin)))
                         (car (nth 3 (plist-get box :margin))))))
            (floats-space-required
@@ -280,7 +265,7 @@ If the length of the longest line is 0, return 1."
                      (if (and (not (plist-get box :min-width))
                               (floatp (plist-get box :width)))
                          (grid--normalize-width (plist-get box :width)
-                                                nil row-width)
+                                                nil width)
                        0
                        ;; TODO add (floatp (plist-get box
                        ;; :width)) or better define a
@@ -288,25 +273,32 @@ If the length of the longest line is 0, return 1."
                        ;; minimum-space-required
                        )))
            (floats-space-available
-            (- row-width minimum-space-required)))
-      (setq row (copy-tree row))
-      (dolist (box (plist-get row :boxes))
+            (- width minimum-space-required))
+           (float-width-box
+            (cl-position-if
+             (lambda (box) (floatp (plist-get box :width)))
+             boxes))
+           (decimals (list 0)))
+      (dolist (box boxes)
         (when (and (floatp (plist-get box :width))
                    (not (plist-get box :min-width)))
           (setf (plist-get box :width)
                 (max
                  (if (> floats-space-available floats-space-required)
                      (grid--normalize-width
-                      (plist-get box :width) nil
-                      row-width)
+                      (plist-get box :width) decimals
+                      width)
                    (- (grid--normalize-width
                        (plist-get box :width)
-                       nil floats-space-required)
+                       decimals floats-space-required)
                       (grid--normalize-width
                        (plist-get box :width) nil
                        (- floats-space-required
                           floats-space-available))))
                  2))))
+      (when float-width-box
+        (cl-incf (plist-get (nth float-width-box boxes) :width)
+                 (round (apply #'+ decimals))))
       row)))
 
 (defun grid--ensure-plist (box)
