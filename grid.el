@@ -236,6 +236,30 @@ If the length of the longest line is 0, return 1."
                       (substring content start-marker end)))
       (plist-put box :start-marker (min (1+ end) end-marker)))))
 
+(defun grid-row--justify-content (row)
+  (grid-let (width boxes justify-content) row
+    (let ((free-space
+           (- width
+              (cl-loop for box in boxes sum
+                       (+ (plist-get box :width)
+                          (car (nth 1 (plist-get box :margin)))
+                          (car (nth 3 (plist-get box :margin))))))))
+      (setf (plist-get row :justification-data)
+            (pcase justify-content
+              ('center
+               (append (list (/ free-space 2))
+                       (make-list (1- (length boxes)) 0)
+                       (list (/ free-space 2))))
+              ('space-between
+               (append (list 0)
+                       (make-list (1- (length boxes))
+                                  (/ free-space (1- (length boxes))))
+                       (list 0)))
+              ('space-evenly
+               (make-list (1+ (length boxes))
+                          (/ free-space (1+ (length boxes))))))))
+    row))
+
 (defun grid--normalize-row (row)
   (setq row (copy-tree row))
   (setf (plist-get row :width)
@@ -254,6 +278,7 @@ If the length of the longest line is 0, return 1."
            (grid-box--normalize-width
             box (plist-get row :width)))
          (plist-get row :boxes)))
+  (setq row (grid-row--justify-content row))
   (setf (plist-get row :boxes)
         (mapcar
          (lambda (box)
@@ -335,8 +360,13 @@ If the length of the longest line is 0, return 1."
   "Insert ROW in the current buffer."
   (setq row (grid--normalize-row row))
   (while (seq-some #'grid-content-not-empty-p (plist-get row :boxes))
-    (mapc #'grid--insert-box-line (plist-get row :boxes))
-    (insert ?\n))
+    (let ((just (plist-get row :justification-data)))
+      (insert-char ?\s (pop just))
+      (cl-loop for box in (plist-get row :boxes)
+               for justification in just do
+               (grid--insert-box-line box)
+               (insert-char ?\s justification))
+      (insert ?\n)))
   (delete-char -1))
 
 (defsubst grid--trim-line ()
