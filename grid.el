@@ -246,6 +246,10 @@ If the length of the longest line is 0, return 1."
                           (car (nth 3 (plist-get box :margin))))))))
       (setf (plist-get row :justification-data)
             (pcase justify-content
+              ((or 'nil 'left)
+               (append
+                (make-list (length boxes) 0)
+                (list free-space)))
               ('center
                (append (list (/ free-space 2))
                        (make-list (1- (length boxes)) 0)
@@ -257,7 +261,9 @@ If the length of the longest line is 0, return 1."
                        (list 0)))
               ('space-evenly
                (make-list (1+ (length boxes))
-                          (/ free-space (1+ (length boxes))))))))
+                          (/ free-space (1+ (length boxes)))))
+              ('right
+               (cons free-space (make-list (length boxes) 0))))))
     row))
 
 (defun grid--normalize-row (row)
