@@ -36,7 +36,7 @@
 
 (defvar-local grid--prev-states nil)
 
-(defun grid-content-not-empty-p (box)
+(defun grid-not-eobp (box)
   "Non-nil if content of BOX is empty."
   (with-current-buffer (plist-get box :buffer) (not (eobp))))
 
@@ -358,7 +358,7 @@ If the length of the longest line is 0, return 1."
 (defun grid--insert-row (row)
   "Insert ROW in the current buffer."
   (setq row (grid--normalize-row row))
-  (while (seq-some #'grid-content-not-empty-p (plist-get row :boxes))
+  (while (seq-some #'grid-not-eobp (plist-get row :boxes))
     (let ((just (plist-get row :justification-data)))
       (insert-char ?\s (pop just))
       (cl-loop for box in (plist-get row :boxes)
@@ -664,7 +664,7 @@ ALIGN values: `left' (default), `right', `center', `full'."
 (defun grid-insert-box (box)
   "Insert BOX in the current buffer."
   (let ((box (grid--normalize-box box)))
-    (while (grid-content-not-empty-p box)
+    (while (grid-not-eobp box)
       (grid--insert-box-line box)
       (insert-char ?\n))
     (delete-char -1)))
