@@ -38,8 +38,7 @@
 
 (defun grid-content-not-empty-p (box)
   "Non-nil if content of BOX is empty."
-  (/= (plist-get box :start-marker)
-      (plist-get box :end-marker)))
+  (with-current-buffer (plist-get box :buffer) (not (eobp))))
 
 (defvar grid-overline '(:overline t) "Overline face.")
 
@@ -94,13 +93,12 @@
 
 (defun grid--reformat-content (box)
   "Reformat CONTENT for a box with CONTENT-WIDTH and align it accoring to ALIGN."
-  (grid-let (content content-width width padding margin) box
-    (with-current-buffer (get-buffer-create "*grid-fill*")
+  (grid-let (content content-width width padding margin uuid buffer) box
+    (with-current-buffer buffer
       (pcase-let* ((`(,ptop ,_ ,pbottom ,_) padding)
                    (`(,mtop ,mright ,mbottom ,mleft) margin)
                    (vmargin-length (+ (car mright) (car mleft) width))
-                   (indent-tabs-mode) (sentence-end-double-space))
-        (erase-buffer)
+                   (sentence-end-double-space) (indent-tabs-mode))
         (setq fill-column content-width)
         (grid--insert-vspacing ptop content-width)
         (insert content)
@@ -111,8 +109,8 @@
         (goto-char (point-min))
         (grid--insert-vspacing mtop vmargin-length)
         (goto-char (point-max))
-        (grid--insert-vspacing mbottom vmargin-length t)
-        (buffer-string)))))
+        (grid--insert-vspacing mbottom vmargin-length t))
+      (goto-char 1))))
 
 (defun grid--longest-line-length (string)
   "Get the length of the longest line in STRING.
@@ -216,25 +214,29 @@ If the length of the longest line is 0, return 1."
   "Normalize BOX to plist."
   (let ((box (grid--normalize-fields (grid--ensure-plist box))))
     (grid--ensure-uuid box)
+    (grid--ensure-buffer box)
     (setq box (grid-box--normalize-width box))
-    (let ((new-content (grid--reformat-content box)))
-      (grid--merge-plists
-       box
-       (list
-        :start-marker 0
-        :end-marker (length new-content)
-        :content new-content)))))
+    (grid--reformat-content box)
+    box))
+
+(defun grid--ensure-buffer (box)
+  (plist-put box :buffer
+             (get-buffer-create
+              (format "*grid-%s*" (plist-get box :uuid))))
+  box)
 
 (defun grid--insert-box-line (box)
   "Format line from BOX and insert it."
-  (grid-let (content width margin start-marker end-marker) box
-    (let* ((margin-width (+ width
-                            (car (nth 1 margin))
-                            (car (nth 3 margin))))
-           (end (min (+ start-marker margin-width) end-marker)))
-      (insert (format (format "%% -%ds" margin-width)
-                      (substring content start-marker end)))
-      (plist-put box :start-marker (min (1+ end) end-marker)))))
+  (grid-let (buffer width margin) box
+    (let ((margin-width (+ width
+                           (car (nth 1 margin))
+                           (car (nth 3 margin))))
+          string)
+      (with-current-buffer buffer
+        (let ((end (min (+ (point) margin-width) (point-max))))
+          (setq string (buffer-substring (point) end))
+          (goto-char (1+ end))))
+      (insert (format (format "%% -%ds" margin-width) string)))))
 
 (defun grid-row--justify-content (row)
   (grid-let (width boxes justify-content) row
@@ -276,7 +278,8 @@ If the length of the longest line is 0, return 1."
         (thread-last (plist-get row :boxes)
                      (mapcar #'grid--ensure-plist)
                      (mapcar #'grid--normalize-fields)
-                     (mapcar #'grid--ensure-uuid)))
+                     (mapcar #'grid--ensure-uuid)
+                     (mapcar #'grid--ensure-buffer)))
   (setq row (grid--normalize-row-width row))
   (setf (plist-get row :boxes)
         (mapcar
@@ -285,17 +288,7 @@ If the length of the longest line is 0, return 1."
             box (plist-get row :width)))
          (plist-get row :boxes)))
   (setq row (grid-row--justify-content row))
-  (setf (plist-get row :boxes)
-        (mapcar
-         (lambda (box)
-           (let ((new-content (grid--reformat-content box)))
-             (grid--merge-plists
-              box
-              (list
-               :start-marker 0
-               :end-marker (length new-content)
-               :content new-content))))
-         (plist-get row :boxes)))
+  (mapc #'grid--reformat-content (plist-get row :boxes))
   row)
 
 (defun grid--normalize-row-width (row)
