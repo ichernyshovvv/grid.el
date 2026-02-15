@@ -230,13 +230,13 @@ If the length of the longest line is 0, return 1."
   (grid-let (buffer width margin) box
     (let ((margin-width (+ width
                            (car (nth 1 margin))
-                           (car (nth 3 margin))))
-          string)
-      (with-current-buffer buffer
-        (let ((end (min (+ (point) margin-width) (point-max))))
-          (setq string (buffer-substring (point) end))
-          (goto-char (1+ end))))
-      (insert (format (format "%% -%ds" margin-width) string)))))
+                           (car (nth 3 margin)))))
+      (insert (format (format "%% -%ds" margin-width)
+                      (with-current-buffer buffer
+                        (let ((end (min (+ (point) margin-width)
+                                        (point-max))))
+                          (prog1 (buffer-substring (point) end)
+                            (goto-char (1+ end))))))))))
 
 (defun grid-row--justify-content (row)
   (grid-let (width boxes justify-content) row
