@@ -366,18 +366,19 @@ If the length of the longest line is 0, return 1."
   (delete-horizontal-space))
 
 (defsubst grid--align-line (align space)
-  (pcase align
-    (`center
-     (beginning-of-line)
-     (insert-char ?\s (ceiling space 2))
-     (end-of-line)
-     (insert-char ?\s (floor space 2)))
-    ((or `nil `left)
-     (end-of-line)
-     (insert-char ?\s space))
-    (`right
-     (beginning-of-line)
-     (insert-char ?\s space))))
+  (when (> space 0)
+    (pcase align
+      (`center
+       (beginning-of-line)
+       (grid--insert-hspacing (ceiling space 2))
+       (end-of-line)
+       (grid--insert-hspacing (floor space 2)))
+      ((or `nil `left)
+       (end-of-line)
+       (grid--insert-hspacing space))
+      (`right
+       (beginning-of-line)
+       (grid--insert-hspacing space)))))
 
 (defun grid--align-lines (box)
   "Align lines in the current buffer with ALIGN.
