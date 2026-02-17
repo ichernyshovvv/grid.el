@@ -219,16 +219,14 @@ If the length of the longest line is 0, return 1."
 
 (defun grid--insert-box-line (box)
   "Format line from BOX and insert it."
-  (grid-let (buffer width margin) box
-    (let ((margin-width (+ width
-                           (car (nth 1 margin))
-                           (car (nth 3 margin)))))
-      (insert (format (format "%% -%ds" margin-width)
-                      (with-current-buffer buffer
-                        (let ((end (min (+ (point) margin-width)
-                                        (point-max))))
-                          (prog1 (buffer-substring (point) end)
-                            (goto-char (1+ end))))))))))
+  (if (grid-not-eobp box)
+      (insert
+       (with-current-buffer (plist-get box :buffer)
+         (prog1 (buffer-substring (line-beginning-position) (line-end-position))
+           (forward-line))))
+    (grid--insert-hspacing (+ (plist-get box :width)
+                              (nth 1 (plist-get box :margin))
+                              (nth 3 (plist-get box :margin))))))
 
 (defun grid-row--justify-content (row)
   (grid-let (width boxes justify-content) row
