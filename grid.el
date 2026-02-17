@@ -671,7 +671,8 @@ ALIGN values: `left' (default), `right', `center', `full'."
 
 (defun grid-insert-column (column)
   "Insert COLUMN in the current buffer."
-  (grid-insert-rows (mapcar #'list column)))
+  (grid-insert-rows
+   (mapcar (lambda (box) (list :boxes (list box))) column)))
 
 (defun grid-make-column (column)
   "Return COLUMN as a string."
