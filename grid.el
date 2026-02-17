@@ -87,23 +87,13 @@
 
 (defun grid--reformat-content (box)
   "Reformat CONTENT for a box with CONTENT-WIDTH and align it accoring to ALIGN."
-  (grid-let (content content-width width padding margin uuid buffer) box
+  (grid-let (content buffer) box
     (with-current-buffer buffer
-      (pcase-let* ((`(,ptop ,_ ,pbottom ,_) padding)
-                   (`(,mtop ,mright ,mbottom ,mleft) margin)
-                   (vmargin-length (+ (car mright) (car mleft) width))
-                   (sentence-end-double-space) (indent-tabs-mode))
-        (setq fill-column content-width)
-        (grid--insert-vspacing ptop content-width)
+      (let (sentence-end-double-space indent-tabs-mode)
         (insert content)
-        (grid--insert-vspacing pbottom content-width t)
-        (goto-char (point-min))
+        (goto-char 1)
         (grid--align-lines box)
-        (put-text-property 1 2 'grid-box-filled t)
-        (goto-char (point-min))
-        (grid--insert-vspacing mtop vmargin-length)
-        (goto-char (point-max))
-        (grid--insert-vspacing mbottom vmargin-length t))
+        (put-text-property 1 2 'grid-box-filled t))
       (goto-char 1))))
 
 (defun grid--longest-line-length (string)
