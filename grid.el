@@ -100,7 +100,7 @@
   "Get the length of the longest line in STRING.
 If the length of the longest line is 0, return 1."
   (thread-last (split-string string "\n")
-               (seq-map #'length)
+               (seq-map #'string-pixel-width)
                seq-max
                (max 1)))
 
@@ -175,7 +175,6 @@ If the length of the longest line is 0, return 1."
      (point) (1- (point))
      'display `( space :width (,space)))))
 
-;; FIX pixels, not chars
 (defun grid--content-based-width (box)
   "Calculate width based on content of BOX."
   (grid-let (padding content) box
