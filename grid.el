@@ -351,11 +351,12 @@ If the length of the longest line is 0, return 1."
   (setq row (grid--normalize-row row))
   (while (seq-some #'grid-not-eobp (plist-get row :boxes))
     (let ((just (plist-get row :justification-data)))
-      (insert-char ?\s (pop just))
+      (grid--insert-hspacing (pop just))
       (cl-loop for box in (plist-get row :boxes)
-               for justification in just do
+               for justification in just
+               do
                (grid--insert-box-line box)
-               (insert-char ?\s justification))
+               (grid--insert-hspacing justification))
       (insert ?\n)))
   (delete-char -1))
 
