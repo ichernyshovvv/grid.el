@@ -159,16 +159,24 @@ If the length of the longest line is 0, return 1."
 
 (defun grid--insert-vspacing (property width &optional newline)
   "Insert vertical spacing."
-  (unless (zerop (car property))
-    (and newline (insert-char ?\n))
+  ;; FIX use WIDTH
+  (when property
+    (if newline (insert-char ?\n))
     (dotimes (_ (car property))
-      (insert-char (cdr property) width)
+      (insert-char ?\s)
+      (put-text-property
+       (point) (1- (point))
+       'display `( space :width (,property)))
       (insert-char ?\n))
-    (and newline (delete-char -1))))
+    (if newline (delete-char -1))))
 
-(defun grid--insert-hspacing (property)
+(defun grid--insert-hspacing (space)
   "Insert horizontal spacing."
-  (insert-char (cdr property) (car property)))
+  (when (> space 0)
+    (insert-char ?\s)
+    (put-text-property
+     (point) (1- (point))
+     'display `( space :width (,space)))))
 
 (defun grid--content-based-width (box)
   "Calculate width based on content of BOX."
