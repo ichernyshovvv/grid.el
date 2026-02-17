@@ -384,10 +384,10 @@ If the length of the longest line is 0, return 1."
   "Align lines in the current buffer with ALIGN.
 ALIGN values: `left' (default), `right', `center', `full'."
   (interactive "P")
-  (grid-let (align padding margin border face) box
+  (grid-let (align padding margin border face content-width) box
     (pcase-let ((`(,_ ,pright ,_ ,pleft) padding)
                 (`(,_ ,mright ,_ ,mleft) margin)
-                (space) (last-line))
+                (last-line) (space))
       ;; mark newlines from original text
       (unless (or (eobp) (get-text-property 1 'grid-box-filled))
         (while (search-forward "\n" (1- (point-max)) t)
@@ -400,21 +400,16 @@ ALIGN values: `left' (default), `right', `center', `full'."
                 grid-box-newline t
                 grid-box-uuid ,(get-text-property (point-min) 'grid-box-uuid))))))
       (goto-char (point-min))
+      (pixel-fill-region 1 (point-max) content-width)
       (while (progn
-               (if align (grid--trim-line) (end-of-line))
-               (setq space (- fill-column (current-column)))
-               (when (< space 0)
-                 (let ((beg (line-beginning-position)))
-                   (fill-region beg (line-end-position) align)
-                   (goto-char beg)
-                   (grid--trim-line)
-                   (setq space (- fill-column (current-column)))
-                   (when (< space 0)
-                     (forward-char space)
-                     (insert ?\n)
-                     (setq space (+ fill-column space)))))
-               (grid--align-line align space)
-               (forward-line 1)
+               (grid--align-line
+                align
+                (- content-width
+                   (string-pixel-width
+                    (buffer-substring
+                     (line-beginning-position)
+                     (line-end-position)))))
+               (forward-line)
                (not (eobp))))
       (goto-char (point-min))
       (setq last-line (line-number-at-pos (1- (point-max))))
