@@ -62,7 +62,7 @@
    ((floatp width)
     (let ((new-width (* width
                         (or parent-width
-                            (window-width (get-buffer-window))))))
+                            (window-width (get-buffer-window) t)))))
       (if decimals
           (setcdr
            (last decimals)
@@ -264,7 +264,7 @@ If the length of the longest line is 0, return 1."
   (setf (plist-get row :width)
         (grid--normalize-width
          (or (plist-get row :width)
-             (window-width (get-buffer-window)))))
+             (window-width (get-buffer-window) t))))
   (setf (plist-get row :boxes)
         (thread-last (plist-get row :boxes)
                      (mapcar #'grid--ensure-plist)
