@@ -72,18 +72,18 @@
    (t (error "Wrong width format"))))
 
 (defun grid--ensure-uuid (box)
-  (grid-let (content) box
-    (let* ((id-of-box-inside
-            (with-temp-buffer
-              (insert content)
-              (goto-char (point-min))
-              (text-property-search-forward 'grid-box-uuid)))
-           (uuid (or id-of-box-inside (grid--uuid))))
-      (plist-put box :uuid uuid)
-      (unless id-of-box-inside
-        (setf (plist-get box :content)
-              (propertize content 'grid-box-uuid uuid)))
-      box)))
+  (let* ((content (plist-get box :content))
+         (id-of-box-inside
+          (with-temp-buffer
+            (insert content)
+            (goto-char (point-min))
+            (text-property-search-forward 'grid-box-uuid)))
+         (uuid (or id-of-box-inside (grid--uuid))))
+    (plist-put box :uuid uuid)
+    (unless id-of-box-inside
+      (setf (plist-get box :content)
+            (propertize content 'grid-box-uuid uuid)))
+    box))
 
 (defun grid--reformat-content (box)
   "Reformat CONTENT for a box with CONTENT-WIDTH and align it accoring to ALIGN."
