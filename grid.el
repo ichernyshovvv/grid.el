@@ -101,7 +101,7 @@
 If the length of the longest line is 0, return 1."
   (thread-last (split-string string "\n")
                (seq-map #'length)
-               (seq-max)
+               seq-max
                (max 1)))
 
 (defalias #'grid--merge-plists
