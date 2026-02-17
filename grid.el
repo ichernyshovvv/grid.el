@@ -31,6 +31,7 @@
 ;;; Code:
 
 (require 'subr-x)
+(require 'pixel-fill)
 (require 'map)
 (require 'cl-lib)
 
