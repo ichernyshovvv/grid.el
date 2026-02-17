@@ -215,7 +215,7 @@ If the length of the longest line is 0, return 1."
 (defun grid--ensure-buffer (box)
   (plist-put box :buffer
              (get-buffer-create
-              (format "*grid-%s*" (plist-get box :uuid))))
+              (format " *grid-%s*" (plist-get box :uuid))))
   box)
 
 (defun grid--insert-box-line (box)
