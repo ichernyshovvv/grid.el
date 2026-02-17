@@ -56,12 +56,6 @@
                           `(,(intern (format ":%s" x)) ,x))
            ,f ,@body))))
 
-(defun grid--apply-face (string face)
-  "Apply FACE to STRING."
-  (add-face-text-property
-   0 (length string)
-   face t string))
-
 (defun grid--normalize-width (width &optional decimals parent-width)
   "Normalize WIDTH."
   (cond
