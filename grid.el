@@ -79,7 +79,7 @@
             (insert content)
             (goto-char (point-min))
             (text-property-search-forward 'grid-box-uuid)))
-         (uuid (or id-of-box-inside (grid--uuid))))
+         (uuid (or id-of-box-inside (gensym "grid-"))))
     (plist-put box :uuid uuid)
     (unless id-of-box-inside
       (setf (plist-get box :content)
@@ -126,31 +126,6 @@ If the length of the longest line is 0, return 1."
               (or (plist-get box (intern (format "%s-%s" p side)))
                   i))))))
   box)
-
-(defun grid--uuid ()
-  "Return string with random (version 4) UUID."
-  ;; This is a copy of `org-id-uuid'.
-  (let ((rnd (md5 (format "%s%s%s%s%s%s%s"
-                          (random)
-                          (current-time)
-                          (user-uid)
-                          (emacs-pid)
-                          (user-full-name)
-                          user-mail-address
-                          (recent-keys)))))
-    (format "%s-%s-4%s-%s%s-%s"
-            (substring rnd 0 8)
-            (substring rnd 8 12)
-            (substring rnd 13 16)
-            (format "%x"
-                    (logior
-                     #b10000000
-                     (logand
-                      #b10111111
-                      (string-to-number
-                       (substring rnd 16 18) 16))))
-            (substring rnd 18 20)
-            (substring rnd 20 32))))
 
 (defun grid--normalize-field (field)
   (cond ((integerp field) field) ((not field) 0)))
