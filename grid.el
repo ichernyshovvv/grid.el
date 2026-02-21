@@ -356,6 +356,30 @@ If the length of the longest line is 0, return 1."
        (beginning-of-line)
        (grid--insert-hspacing space)))))
 
+(defun grid-fill-buffer (width)
+  "Fill the region between START and END.
+This will attempt to reformat the text in the region to have no
+lines that are visually wider than WIDTH."
+  (save-window-excursion
+    (set-window-buffer nil (current-buffer))
+    (save-excursion
+      (goto-char 1)
+      (let ((indentation
+             (car (window-text-pixel-size nil (line-beginning-position)
+                                          (point)))))
+        (when (> indentation width)
+          (error "The indentation (%s) is wider than the fill width (%s)"
+                 indentation width))
+        (save-restriction
+          (goto-char 1)
+          (grid--fill-line width indentation))))))
+
+(defun grid--fill-line (width &optional indentation)
+  (while (not (eobp))
+    (pixel-fill--goto-pixel width)
+    (if (eolp) (forward-line)
+      (insert ?\n))))
+
 (defun grid--align-lines (box)
   "Align lines in the current buffer with ALIGN.
 ALIGN values: `left' (default), `right', `center', `full'."
@@ -376,7 +400,7 @@ ALIGN values: `left' (default), `right', `center', `full'."
                 grid-box-newline t
                 grid-box-uuid ,(get-text-property (point-min) 'grid-box-uuid))))))
       (goto-char (point-min))
-      (pixel-fill-region 1 (point-max) content-width)
+      (grid-fill-buffer content-width)
       (while (progn
                (grid--align-line
                 align
