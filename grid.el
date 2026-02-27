@@ -599,11 +599,6 @@ ALIGN values: `left' (default), `right', `center', `full'."
                 window-size-change-functions)))
   (set symbol value))
 
-(defcustom grid-revert-on-width-change t
-  "Whether to revert displayed buffers with grid blocks if window size changed."
-  :type 'boolean
-  :set #'grid--set-revert-on-width-change)
-
 (defun grid--delayed-revert (&optional window)
   "Revert currently displayed grid buffers with delay of `grid-revert-delay' seconds."
   (cancel-timer grid--timer)
