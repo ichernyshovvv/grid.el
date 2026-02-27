@@ -587,25 +587,13 @@ ALIGN values: `left' (default), `right', `center', `full'."
     (timer-activate timer)
     timer))
 
-(defun grid--set-revert-on-width-change (symbol value)
-  "Set SYMBOL's value to VALUE."
-  (if value
-      (progn
-        (add-hook 'window-state-change-hook #'grid--revert-maybe)
-        (cl-pushnew #'grid--delayed-revert window-size-change-functions))
-    (remove-hook 'window-state-change-hook #'grid--revert-maybe)
-    (setq window-size-change-functions
-          (delq #'grid--delayed-revert
-                window-size-change-functions)))
-  (set symbol value))
-
 (defun grid--delayed-revert (&optional window)
   "Revert currently displayed grid buffers with delay of `grid-revert-delay' seconds."
   (cancel-timer grid--timer)
   (timer-activate grid--timer)
   (timer-set-time grid--timer (time-add nil grid-revert-delay)))
 
-(defun grid--revert-maybe ()
+(defun grid--revert-maybe (_)
   "Revert if windows count changed in the current frame."
   (unless (eq (frame-parameter (window-frame) 'grid--windows-count)
               (count-windows))
@@ -617,7 +605,7 @@ ALIGN values: `left' (default), `right', `center', `full'."
 (defun grid--do-revert (&rest _)
   (dolist (window (window-list))
     (with-current-buffer (window-buffer window)
-      (and-let* (((memq 'grid-text-selection-mode local-minor-modes))
+      (and-let* (((memq 'grid-autorevert-mode local-minor-modes))
                  (width (window-pixel-width window))
                  ((/= width grid--window-width)))
         (condition-case err (revert-buffer nil t)
@@ -634,7 +622,6 @@ ALIGN values: `left' (default), `right', `center', `full'."
   :global nil
   (if grid-text-selection-mode
       (setq
-       grid--window-width (window-pixel-width)
        grid--prev-states
        (buffer-local-set-state
         redisplay-highlight-region-function #'grid-redisplay--select
@@ -642,6 +629,15 @@ ALIGN values: `left' (default), `right', `center', `full'."
         region-extract-function #'grid--extract-content))
     (deactivate-mark)
     (buffer-local-restore-state grid--prev-states)))
+
+(define-minor-mode grid-autorevert-mode
+  "Toggle autorevert on window size change."
+  :global nil
+  (if grid-autorevert-mode
+      (progn
+        (setq grid--window-width (window-pixel-width))
+        (add-hook 'window-size-change-functions #'grid--revert-maybe nil t))
+    (remove-hook 'window-size-change-functions #'grid--revert-maybe t)))
 
 (defun grid-insert-box (box)
   "Insert BOX in the current buffer."
