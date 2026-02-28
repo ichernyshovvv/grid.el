@@ -576,23 +576,6 @@ ALIGN values: `left' (default), `right', `center', `full'."
   :group 'display
   :link '(url-link "https://github.com/ichernyshovvv/grid.el"))
 
-(defcustom grid-revert-delay 0.3
-  "Seconds to wait before redisplaying buffers with grid blocks."
-  :type 'float)
-
-(defvar grid--timer
-  (let ((timer (timer-create)))
-    (timer-set-function timer #'grid--do-revert)
-    (timer-set-time timer (time-add nil grid-revert-delay))
-    (timer-activate timer)
-    timer))
-
-(defun grid--delayed-revert (&optional window)
-  "Revert currently displayed grid buffers with delay of `grid-revert-delay' seconds."
-  (cancel-timer grid--timer)
-  (timer-activate grid--timer)
-  (timer-set-time grid--timer (time-add nil grid-revert-delay)))
-
 (defvar-local grid--window-width 0)
 
 (defun grid--do-revert (&rest _)
