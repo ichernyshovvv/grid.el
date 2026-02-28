@@ -400,6 +400,7 @@ ALIGN values: `left' (default), `right', `center', `full'."
                 grid-box-newline t
                 grid-box-uuid ,(get-text-property (point-min) 'grid-box-uuid))))))
       (goto-char (point-min))
+      (and face (add-face-text-property 1 (point-max) face t))
       (grid-fill-buffer content-width)
       (while (progn
                (grid--align-line
