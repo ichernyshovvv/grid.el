@@ -578,12 +578,10 @@ ALIGN values: `left' (default), `right', `center', `full'."
 
 (defvar-local grid--window-width 0)
 
-(defun grid--do-revert (&rest _)
-  (dolist (window (window-list))
-    (with-current-buffer (window-buffer window)
-      (and-let* (((memq 'grid-autorevert-mode local-minor-modes))
-                 (width (window-pixel-width window))
-                 ((/= width grid--window-width)))
+(defun grid--do-revert (window)
+  (with-current-buffer (window-buffer window)
+    (let ((width (window-pixel-width window)))
+      (when (/= width grid--window-width)
         (condition-case err (revert-buffer nil t)
           (error
            (unless (equal "Buffer does not seem to be associated with any file"
