@@ -593,13 +593,6 @@ ALIGN values: `left' (default), `right', `center', `full'."
   (timer-activate grid--timer)
   (timer-set-time grid--timer (time-add nil grid-revert-delay)))
 
-(defun grid--revert-maybe (_)
-  "Revert if windows count changed in the current frame."
-  (unless (eq (frame-parameter (window-frame) 'grid--windows-count)
-              (count-windows))
-    (grid--do-revert)
-    (set-frame-parameter (window-frame) 'grid--windows-count (count-windows))))
-
 (defvar-local grid--window-width 0)
 
 (defun grid--do-revert (&rest _)
@@ -636,8 +629,8 @@ ALIGN values: `left' (default), `right', `center', `full'."
   (if grid-autorevert-mode
       (progn
         (setq grid--window-width (window-pixel-width))
-        (add-hook 'window-size-change-functions #'grid--revert-maybe nil t))
-    (remove-hook 'window-size-change-functions #'grid--revert-maybe t)))
+        (add-hook 'window-size-change-functions #'grid--do-revert nil t))
+    (remove-hook 'window-size-change-functions #'grid--do-revert t)))
 
 (defun grid-insert-box (box)
   "Insert BOX in the current buffer."
