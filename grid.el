@@ -377,7 +377,7 @@ lines that are visually wider than WIDTH."
 (defun grid--fill-line (width &optional indentation)
   (while (not (eobp))
     (pixel-fill--goto-pixel width)
-    (if (eolp) (forward-line)
+    (if (or (bolp) (eolp)) (forward-line)
       (insert ?\n))))
 
 (defun grid--align-lines (box)
