@@ -169,7 +169,8 @@ If the length of the longest line is 0, return 1."
               (grid--normalize-width
                (or min-width grid--min-width) nil parent-width)
               (grid--normalize-width
-               (or width (grid--content-based-width box))
+               (or width (grid--longest-line-length
+                          (plist-get box :content)))
                nil parent-width)
               grid--min-width)))
         (grid--merge-plists
