@@ -166,8 +166,12 @@ If the length of the longest line is 0, return 1."
     (pcase-let ((`(,_ ,pright ,_ ,pleft) padding))
       (let ((width
              (max
+              ;; REFACTOR
+              (or (grid--normalize-min-width box) 0)
               (grid--normalize-width
-               (or min-width grid--min-width) nil parent-width)
+               (or (grid--normalize-min-width box)
+                   grid--min-width)
+               nil parent-width)
               (grid--normalize-width
                (or width (grid--longest-line-length
                           (plist-get box :content)))
@@ -258,13 +262,22 @@ If the length of the longest line is 0, return 1."
   (mapc #'grid--reformat-content (plist-get row :boxes))
   row)
 
+;; REFACTOR
+(defun grid--normalize-min-width (box)
+  ":min-width \\='content -- box width can't less than longest line in the
+content."
+  (grid-let (min-width) box
+    (if (eq min-width 'content)
+        (grid--content-based-width box)
+      min-width)))
+
 (defun grid--normalize-row-width (row)
   (setq row (copy-tree row))
   (grid-let (boxes width) row
     (let* ((minimum-space-required
             (cl-loop for box in boxes sum
                      (+ (grid--normalize-width
-                         (or (plist-get box :min-width)
+                         (or (grid--normalize-min-width box)
                              (if (integerp (plist-get box :width))
                                  (plist-get box :width))
                              0)
@@ -273,7 +286,7 @@ If the length of the longest line is 0, return 1."
                         (nth 3 (plist-get box :margin)))))
            (floats-space-required
             (cl-loop for box in boxes sum
-                     (if (and (not (plist-get box :min-width))
+                     (if (and (not (grid--normalize-min-width box))
                               (or (floatp (plist-get box :width))
                                   (not (plist-get box :width))))
                          (grid--normalize-width
@@ -285,13 +298,13 @@ If the length of the longest line is 0, return 1."
            (float-width-box
             (cl-position-if
              (lambda (box)
-               (and (not (plist-get box :min-width))
+               (and (not (grid--normalize-min-width box))
                     (or (floatp (plist-get box :width))
                         (not (plist-get box :width)))))
              boxes))
            (flexible-count
             (cl-loop for box in boxes count
-                     (and (not (plist-get box :min-width))
+                     (and (not (grid--normalize-min-width box))
                           (or (floatp (plist-get box :width))
                               (not (plist-get box :width))))))
            (decimals (list 0)))
@@ -299,7 +312,7 @@ If the length of the longest line is 0, return 1."
        row :boxes
        (cl-loop for box in boxes collect
                 (progn
-                  (when (and (not (plist-get box :min-width))
+                  (when (and (not (grid--normalize-min-width box))
                              (or (floatp (plist-get box :width))
                                  (not (plist-get box :width))))
                     (setf (plist-get box :width)
