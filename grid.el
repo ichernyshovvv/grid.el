@@ -309,7 +309,7 @@ If the length of the longest line is 0, return 1."
                                    box-width nil
                                    (- floats-space-required
                                       floats-space-available)))))
-                           2)))
+                           grid--min-width)))
                   box)))
       (when float-width-box
         (cl-incf (plist-get (nth float-width-box (plist-get row :boxes))
