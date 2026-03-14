@@ -158,7 +158,7 @@ If the length of the longest line is 0, return 1."
       (+ (grid--longest-line-length content)
          pleft pright))))
 
-(defvar grid--min-width 20)
+(defvar grid--min-width (frame-char-width))
 
 (cl-defun grid-box--normalize-width
     (box &optional (parent-width (window-width (get-buffer-window) t)))
