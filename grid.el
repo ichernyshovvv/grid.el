@@ -284,8 +284,9 @@ If the length of the longest line is 0, return 1."
            (float-width-box
             (cl-position-if
              (lambda (box)
-               (or (floatp (plist-get box :width))
-                   (not (plist-get box :width))))
+               (and (not (plist-get box :min-width))
+                    (or (floatp (plist-get box :width))
+                        (not (plist-get box :width)))))
              boxes))
            (decimals (list 0)))
       (plist-put
