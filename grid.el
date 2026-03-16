@@ -381,13 +381,26 @@ lines that are visually wider than WIDTH."
     (set-window-buffer nil (current-buffer))
     (save-excursion
       (goto-char 1)
-      (grid--fill-line width))))
+      (while (not (eobp))
+        (grid--fill-line width)
+        (forward-line)))))
 
 (defun grid--fill-line (width)
-  (while (not (eobp))
+  (let ((start (point)))
     (pixel-fill--goto-pixel width)
-    (if (or (bolp) (eolp)) (forward-line)
-      (insert ?\n))))
+    (while (not (eolp))
+      ;; We have to do some folding.  First find the first previous
+      ;; point suitable for folding.
+      (let ((p (point)))
+        (unless (pixel-fill-find-fill-point (line-beginning-position))
+          (goto-char p)))
+      (when (= (preceding-char) ?\s)
+	(delete-char -1))
+      (unless (eobp)
+        (insert ?\n))
+      (setq start (point))
+      (unless (eobp)
+        (pixel-fill--goto-pixel width)))))
 
 (defun grid--align-lines (box)
   "Align lines in the current buffer with ALIGN.
