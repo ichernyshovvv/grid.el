@@ -381,17 +381,9 @@ lines that are visually wider than WIDTH."
     (set-window-buffer nil (current-buffer))
     (save-excursion
       (goto-char 1)
-      (let ((indentation
-             (car (window-text-pixel-size nil (line-beginning-position)
-                                          (point)))))
-        (when (> indentation width)
-          (error "The indentation (%s) is wider than the fill width (%s)"
-                 indentation width))
-        (save-restriction
-          (goto-char 1)
-          (grid--fill-line width indentation))))))
+      (grid--fill-line width))))
 
-(defun grid--fill-line (width &optional indentation)
+(defun grid--fill-line (width)
   (while (not (eobp))
     (pixel-fill--goto-pixel width)
     (if (or (bolp) (eolp)) (forward-line)
