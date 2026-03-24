@@ -57,8 +57,8 @@
                           `(,(intern (format ":%s" x)) ,x))
            ,f ,@body))))
 
-(defun grid--normalize-width (width &optional decimals parent-width)
-  "Normalize WIDTH."
+(defun grid--width-absolutize (width &optional decimals parent-width)
+  "Ensure that relative WIDTH value is absolute."
   (cond
    ((floatp width)
     (let ((new-width (* width
@@ -168,14 +168,14 @@ If the length of the longest line is 0, return 1."
               (pcase min-width
                 ('content (grid--content-based-width box))
                 ('nil nil)
-                (_ (grid--normalize-width
+                (_ (grid--width-absolutize
                     min-width nil parent-width))))
              (width
               (max
                (if (memq width '(nil content))
                    (grid--longest-line-length
                     (plist-get box :content))
-                 (grid--normalize-width width nil parent-width))
+                 (grid--width-absolutize width nil parent-width))
                (or min-width grid--min-width))))
         (grid--merge-plists
          box
@@ -243,7 +243,7 @@ If the length of the longest line is 0, return 1."
 (defun grid--normalize-row (row)
   (setq row (copy-tree row))
   (setf (plist-get row :width)
-        (grid--normalize-width
+        (grid--width-absolutize
          (or (plist-get row :width)
              (window-width (get-buffer-window) t))))
   (setf (plist-get row :boxes)
@@ -268,7 +268,7 @@ If the length of the longest line is 0, return 1."
   (grid-let (boxes width) row
     (let* ((minimum-space-required
             (cl-loop for box in boxes sum
-                     (+ (grid--normalize-width
+                     (+ (grid--width-absolutize
                          (or (plist-get box :min-width)
                              (if (integerp (plist-get box :width))
                                  (plist-get box :width))
@@ -281,7 +281,7 @@ If the length of the longest line is 0, return 1."
                      (if (and (not (plist-get box :min-width))
                               (or (floatp (plist-get box :width))
                                   (not (plist-get box :width))))
-                         (grid--normalize-width
+                         (grid--width-absolutize
                           (or (plist-get box :width)
                               (grid--content-based-width box))
                           nil width)
@@ -313,8 +313,8 @@ If the length of the longest line is 0, return 1."
                                   (or (plist-get box :width)
                                       (grid--content-based-width box))))
                              (if (> floats-space-available floats-space-required)
-                                 (grid--normalize-width box-width decimals width)
-                               (grid--normalize-width
+                                 (grid--width-absolutize box-width decimals width)
+                               (grid--width-absolutize
                                 (/ 1.0 flexible-count)
                                 decimals floats-space-available)))
                            grid--min-width)))
