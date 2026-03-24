@@ -165,11 +165,9 @@ If the length of the longest line is 0, return 1."
   (grid-let (padding min-width width) box
     (pcase-let ((`(,_ ,pright ,_ ,pleft) padding))
       (let* ((min-width
-              (pcase min-width
-                ('content (grid--content-based-width box))
-                ('nil nil)
-                (_ (grid--width-absolutize
-                    min-width nil parent-width))))
+              (when min-width
+                (grid--width-absolutize
+                 min-width nil parent-width)))
              (width
               (max
                (if (memq width '(nil content))
@@ -189,8 +187,22 @@ If the length of the longest line is 0, return 1."
   (let ((box (grid--normalize-fields (grid--ensure-plist box))))
     (grid--ensure-uuid box)
     (grid--ensure-buffer box)
+    (setq box (grid--box-resolve-min-width box))
+    (setq box (grid--box-resolve-width box))
     (setq box (grid--box-normalize-size box))
     (grid--reformat-content box)
+    box))
+
+(defun grid--box-resolve-width (box)
+  (if (memq (plist-get box :width) '(nil content))
+      (plist-put box :width
+                 (grid--longest-line-length
+                  (plist-get box :content)))
+    box))
+
+(defun grid--box-resolve-min-width (box)
+  (if (eq (plist-get box :min-width) 'content)
+      (plist-put box :min-width (grid--content-based-width box))
     box))
 
 (defun grid--ensure-buffer (box)
@@ -251,7 +263,9 @@ If the length of the longest line is 0, return 1."
                      (mapcar #'grid--ensure-plist)
                      (mapcar #'grid--normalize-fields)
                      (mapcar #'grid--ensure-uuid)
-                     (mapcar #'grid--ensure-buffer)))
+                     (mapcar #'grid--ensure-buffer)
+                     (mapcar #'grid--box-resolve-min-width)
+                     (mapcar #'grid--box-resolve-width)))
   (setq row (grid--row-normalize-width row))
   (setf (plist-get row :boxes)
         (mapcar
