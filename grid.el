@@ -160,27 +160,28 @@ If the length of the longest line is 0, return 1."
 
 (defvar grid--min-width (frame-char-width))
 
-(cl-defun grid-box--normalize-width
+(cl-defun grid-box--normalize-size
     (box &optional (parent-width (window-width (get-buffer-window) t)))
   (grid-let (padding min-width width) box
     (pcase-let ((`(,_ ,pright ,_ ,pleft) padding))
-      (let ((width
-             (max
-              ;; REFACTOR
-              (or (grid--normalize-min-width box) 0)
-              (grid--normalize-width
-               (or (grid--normalize-min-width box)
-                   grid--min-width)
-               nil parent-width)
-              (grid--normalize-width
-               (or width (grid--longest-line-length
-                          (plist-get box :content)))
-               nil parent-width)
-              grid--min-width)))
+      (let* ((min-width
+              (pcase min-width
+                ('content (grid--content-based-width box))
+                ('nil nil)
+                (_ (grid--normalize-width
+                    min-width nil parent-width))))
+             (width
+              (max
+               (if (memq width '(nil content))
+                   (grid--longest-line-length
+                    (plist-get box :content))
+                 (grid--normalize-width width nil parent-width))
+               (or min-width grid--min-width))))
         (grid--merge-plists
          box
          (list
           :content-width (max grid--min-width (- width pleft pright))
+          :min-width min-width
           :width width))))))
 
 (defun grid--normalize-box (box)
@@ -188,7 +189,7 @@ If the length of the longest line is 0, return 1."
   (let ((box (grid--normalize-fields (grid--ensure-plist box))))
     (grid--ensure-uuid box)
     (grid--ensure-buffer box)
-    (setq box (grid-box--normalize-width box))
+    (setq box (grid-box--normalize-size box))
     (grid--reformat-content box)
     box))
 
@@ -255,21 +256,12 @@ If the length of the longest line is 0, return 1."
   (setf (plist-get row :boxes)
         (mapcar
          (lambda (box)
-           (grid-box--normalize-width
-            box (plist-get row :width)))
+           (grid-box--normalize-size box (plist-get row :width)))
          (plist-get row :boxes)))
   (setq row (grid-row--justify-content row))
   (mapc #'grid--reformat-content (plist-get row :boxes))
   row)
 
-;; REFACTOR
-(defun grid--normalize-min-width (box)
-  ":min-width \\='content -- box width can't less than longest line in the
-content."
-  (grid-let (min-width) box
-    (if (eq min-width 'content)
-        (grid--content-based-width box)
-      min-width)))
 
 (defun grid--normalize-row-width (row)
   (setq row (copy-tree row))
@@ -277,7 +269,7 @@ content."
     (let* ((minimum-space-required
             (cl-loop for box in boxes sum
                      (+ (grid--normalize-width
-                         (or (grid--normalize-min-width box)
+                         (or (plist-get box :min-width)
                              (if (integerp (plist-get box :width))
                                  (plist-get box :width))
                              0)
@@ -286,7 +278,7 @@ content."
                         (nth 3 (plist-get box :margin)))))
            (floats-space-required
             (cl-loop for box in boxes sum
-                     (if (and (not (grid--normalize-min-width box))
+                     (if (and (not (plist-get box :min-width))
                               (or (floatp (plist-get box :width))
                                   (not (plist-get box :width))))
                          (grid--normalize-width
@@ -298,13 +290,13 @@ content."
            (float-width-box
             (cl-position-if
              (lambda (box)
-               (and (not (grid--normalize-min-width box))
+               (and (not (plist-get box :min-width))
                     (or (floatp (plist-get box :width))
                         (not (plist-get box :width)))))
              boxes))
            (flexible-count
             (cl-loop for box in boxes count
-                     (and (not (grid--normalize-min-width box))
+                     (and (not (plist-get box :min-width))
                           (or (floatp (plist-get box :width))
                               (not (plist-get box :width))))))
            (decimals (list 0)))
@@ -312,7 +304,7 @@ content."
        row :boxes
        (cl-loop for box in boxes collect
                 (progn
-                  (when (and (not (grid--normalize-min-width box))
+                  (when (and (not (plist-get box :min-width))
                              (or (floatp (plist-get box :width))
                                  (not (plist-get box :width))))
                     (setf (plist-get box :width)
