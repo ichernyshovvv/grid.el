@@ -252,7 +252,7 @@ If the length of the longest line is 0, return 1."
                      (mapcar #'grid--normalize-fields)
                      (mapcar #'grid--ensure-uuid)
                      (mapcar #'grid--ensure-buffer)))
-  (setq row (grid--normalize-row-width row))
+  (setq row (grid--row-normalize-width row))
   (setf (plist-get row :boxes)
         (mapcar
          (lambda (box)
@@ -263,7 +263,7 @@ If the length of the longest line is 0, return 1."
   row)
 
 
-(defun grid--normalize-row-width (row)
+(defun grid--row-normalize-width (row)
   (setq row (copy-tree row))
   (grid-let (boxes width) row
     (let* ((minimum-space-required
