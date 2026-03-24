@@ -160,7 +160,7 @@ If the length of the longest line is 0, return 1."
 
 (defvar grid--min-width (frame-char-width))
 
-(cl-defun grid-box--normalize-size
+(cl-defun grid--box-normalize-size
     (box &optional (parent-width (window-width (get-buffer-window) t)))
   (grid-let (padding min-width width) box
     (pcase-let ((`(,_ ,pright ,_ ,pleft) padding))
@@ -189,7 +189,7 @@ If the length of the longest line is 0, return 1."
   (let ((box (grid--normalize-fields (grid--ensure-plist box))))
     (grid--ensure-uuid box)
     (grid--ensure-buffer box)
-    (setq box (grid-box--normalize-size box))
+    (setq box (grid--box-normalize-size box))
     (grid--reformat-content box)
     box))
 
@@ -256,7 +256,7 @@ If the length of the longest line is 0, return 1."
   (setf (plist-get row :boxes)
         (mapcar
          (lambda (box)
-           (grid-box--normalize-size box (plist-get row :width)))
+           (grid--box-normalize-size box (plist-get row :width)))
          (plist-get row :boxes)))
   (setq row (grid-row--justify-content row))
   (mapc #'grid--reformat-content (plist-get row :boxes))
