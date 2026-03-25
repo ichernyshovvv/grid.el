@@ -394,6 +394,7 @@ lines that are visually wider than WIDTH."
       (when (= (preceding-char) ?\s)
 	(delete-char -1))
       (unless (eobp)
+        (if (bolp) (forward-char))
         (insert ?\n))
       (setq start (point))
       (unless (eobp)
