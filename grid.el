@@ -160,6 +160,11 @@ If the length of the longest line is 0, return 1."
 
 (defvar grid--min-width (frame-char-width))
 
+(defun grid--flexible-box-p (box)
+  (and (not (plist-get box :min-width))
+       (or (floatp (plist-get box :width))
+           (not (plist-get box :width)))))
+
 (cl-defun grid--box-normalize-size
     (box &optional (parent-width (window-width (get-buffer-window) t)))
   (grid-let (padding min-width width) box
@@ -292,35 +297,21 @@ If the length of the longest line is 0, return 1."
                         (nth 3 (plist-get box :margin)))))
            (floats-space-required
             (cl-loop for box in boxes sum
-                     (if (and (not (plist-get box :min-width))
-                              (or (floatp (plist-get box :width))
-                                  (not (plist-get box :width))))
+                     (if (grid--flexible-box-p box)
                          (grid--width-absolutize
                           (or (plist-get box :width)
                               (grid--content-based-width box))
                           nil width)
                        0)))
            (floats-space-available (- width minimum-space-required))
-           (float-width-box
-            (cl-position-if
-             (lambda (box)
-               (and (not (plist-get box :min-width))
-                    (or (floatp (plist-get box :width))
-                        (not (plist-get box :width)))))
-             boxes))
-           (flexible-count
-            (cl-loop for box in boxes count
-                     (and (not (plist-get box :min-width))
-                          (or (floatp (plist-get box :width))
-                              (not (plist-get box :width))))))
+           (float-width-box (cl-position-if #'grid--flexible-box-p boxes))
+           (flexible-count (cl-count-if #'grid--flexible-box-p boxes))
            (decimals (list 0)))
       (plist-put
        row :boxes
        (cl-loop for box in boxes collect
                 (progn
-                  (when (and (not (plist-get box :min-width))
-                             (or (floatp (plist-get box :width))
-                                 (not (plist-get box :width))))
+                  (when (grid--flexible-box-p box)
                     (setf (plist-get box :width)
                           (max
                            (let ((box-width
