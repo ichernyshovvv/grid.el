@@ -153,9 +153,10 @@ If the length of the longest line is 0, return 1."
 
 (defun grid--content-based-width (box)
   "Calculate width based on content of BOX."
-  (grid-let (padding content) box
+  (grid-let (padding content face) box
     (pcase-let ((`(,_ ,pright ,_ ,pleft) padding))
-      (+ (grid--longest-line-length content)
+      (+ (grid--longest-line-length
+          (propertize content 'face face))
          pleft pright))))
 
 (defvar grid--min-width (frame-char-width))
