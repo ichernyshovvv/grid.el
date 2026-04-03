@@ -257,6 +257,27 @@ If the length of the longest line is 0, return 1."
                (cons free-space (make-list (length boxes) 0))))))
     row))
 
+(defun grid--row-apply-face (row)
+  ;; TODO Refactor
+  (setq row (copy-tree row))
+  (grid-let (boxes face) row
+    (when face
+      (setf (plist-get row :boxes)
+            (cl-loop for box in boxes collect
+                     (progn
+                       (setf (plist-get box :face)
+                             (let ((box-face (plist-get box :face)))
+                               (cond
+                                ((grid--face-p box-face)
+                                 (list box-face face))
+                                ((and (listp box-face)
+                                      (cl-every #'grid--face-p box-face))
+                                 (cons face box-face))
+                                ((not box-face) face)
+                                (t box-face))))
+                       box)))))
+  row)
+
 (defun grid--normalize-row (row)
   (setq row (copy-tree row))
   (setf (plist-get row :width)
@@ -272,6 +293,7 @@ If the length of the longest line is 0, return 1."
                      (mapcar #'grid--box-resolve-min-width)
                      (mapcar #'grid--box-resolve-width)))
   (setq row (grid--row-normalize-width row))
+  (setq row (grid--row-apply-face row))
   (setf (plist-get row :boxes)
         (mapcar
          (lambda (box)
@@ -280,6 +302,11 @@ If the length of the longest line is 0, return 1."
   (setq row (grid-row--justify-content row))
   (mapc #'grid--reformat-content (plist-get row :boxes))
   row)
+
+(defun grid--face-p (face)
+  (or
+   (and (plistp face) (keywordp (car face))) ;; anonymous face
+   (facep face)))
 
 
 (defun grid--row-normalize-width (row)
@@ -339,13 +366,14 @@ If the length of the longest line is 0, return 1."
   "Insert ROW in the current buffer."
   (setq row (grid--normalize-row row))
   (while (seq-some #'grid-not-eobp (plist-get row :boxes))
-    (let ((just (plist-get row :justification-data)))
-      (grid--insert-hspacing (pop just))
+    (let ((just (plist-get row :justification-data))
+          (face (plist-get row :face)))
+      (grid--insert-hspacing (pop just) face)
       (cl-loop for box in (plist-get row :boxes)
                for justification in just
                do
                (grid--insert-box-line box)
-               (grid--insert-hspacing justification))
+               (grid--insert-hspacing justification face))
       (insert ?\n)))
   (delete-char -1))
 
