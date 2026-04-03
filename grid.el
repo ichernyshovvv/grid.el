@@ -143,13 +143,13 @@ If the length of the longest line is 0, return 1."
       (insert-char ?\n))
     (if newline (delete-char -1))))
 
-(defun grid--insert-hspacing (space)
+(defun grid--insert-hspacing (space &optional face)
   "Insert horizontal spacing."
   (when (> space 0)
     (insert-char ?\s)
-    (put-text-property
-     (point) (1- (point))
-     'display `( space :width (,space)))))
+    (put-text-property (point) (1- (point))
+                       'display `( space :width (,space)))
+    (if face (put-text-property (point) (1- (point)) 'face face))))
 
 (defun grid--content-based-width (box)
   "Calculate width based on content of BOX."
