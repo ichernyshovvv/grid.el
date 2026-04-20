@@ -168,24 +168,30 @@ If the length of the longest line is 0, return 1."
 
 (cl-defun grid--box-normalize-size
     (box &optional (parent-width (window-width (get-buffer-window) t)))
-  (grid-let (padding min-width width) box
+  (grid-let (padding min-width width max-width) box
     (pcase-let ((`(,_ ,pright ,_ ,pleft) padding))
       (let* ((min-width
               (when min-width
                 (grid--width-absolutize
                  min-width nil parent-width)))
+             (max-width
+              (when max-width
+                (grid--width-absolutize
+                 max-width nil parent-width)))
              (width
               (max
                (if (memq width '(nil content))
                    (grid--longest-line-length
                     (plist-get box :content))
                  (grid--width-absolutize width nil parent-width))
-               (or min-width grid--min-width))))
+               (or min-width grid--min-width)))
+             (width (min width (or max-width width))))
         (grid--merge-plists
          box
          (list
           :content-width (max grid--min-width (- width pleft pright))
           :min-width min-width
+          :max-width max-width
           :width width))))))
 
 (defun grid--normalize-box (box)
