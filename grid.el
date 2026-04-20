@@ -399,6 +399,25 @@ If the length of the longest line is 0, return 1."
        (beginning-of-line)
        (grid--insert-hspacing space)))))
 
+(defun grid--insert-ellipsis (height width)
+  (save-excursion
+    (goto-char 1)
+    (when (= (forward-line height) 0)
+      (while (not (eobp)) (delete-line))
+      (if (and (bolp) (eolp)) (delete-char -1))
+      (beginning-of-line)
+      (let ((p (current-line)))
+        (grid--fill-line (- width (string-pixel-width "᳟")))
+        (let ((lines-count (count-lines 1 (point-max))))
+          (when (/= (current-line) p)
+            (goto-char 1)
+            (forward-line (1+ p))
+            (while (not (eobp)) (delete-line))
+            (if (and (bolp) (eolp)) (delete-char -1)))
+          (when (/= lines-count (count-lines 1 (point-max)))
+            (end-of-line)
+            (insert ?᳟)))))))
+
 (defun grid-fill-buffer (width)
   "Fill the region between START and END.
 This will attempt to reformat the text in the region to have no
@@ -433,7 +452,7 @@ lines that are visually wider than WIDTH."
   "Align lines in the current buffer with ALIGN.
 ALIGN values: `left' (default), `right', `center', `full'."
   (interactive "P")
-  (grid-let (align padding margin border face content-width) box
+  (grid-let (align padding margin border face content-width height) box
     (pcase-let ((`(,_ ,pright ,_ ,pleft) padding)
                 (`(,_ ,mright ,_ ,mleft) margin)
                 (last-line) (space))
@@ -451,6 +470,7 @@ ALIGN values: `left' (default), `right', `center', `full'."
       (goto-char (point-min))
       (and face (add-face-text-property 1 (point-max) face t))
       (grid-fill-buffer content-width)
+      (if height (grid--insert-ellipsis height content-width))
       (while (progn
                (grid--align-line
                 align
