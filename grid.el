@@ -413,7 +413,7 @@ If the length of the longest line is 0, return 1."
       (if (and (bolp) (eolp)) (delete-char -1))
       (beginning-of-line)
       (let ((p (current-line)))
-        (grid--fill-line (- width (string-pixel-width "᳟")))
+        (grid--fill-line (- width (string-pixel-width "…")))
         (let ((lines-count (count-lines 1 (point-max))))
           (when (/= (current-line) p)
             (goto-char 1)
@@ -422,7 +422,7 @@ If the length of the longest line is 0, return 1."
             (if (and (bolp) (eolp)) (delete-char -1)))
           (when (/= lines-count (count-lines 1 (point-max)))
             (end-of-line)
-            (insert ?᳟)))))))
+            (insert ?…)))))))
 
 (defun grid-fill-buffer (width)
   "Fill the region between START and END.
