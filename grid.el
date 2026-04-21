@@ -34,6 +34,7 @@
 (require 'pixel-fill)
 (require 'map)
 (require 'cl-lib)
+(require 'array)
 
 (defvar-local grid--prev-states nil)
 
@@ -412,10 +413,10 @@ If the length of the longest line is 0, return 1."
       (while (not (eobp)) (delete-line))
       (if (and (bolp) (eolp)) (delete-char -1))
       (beginning-of-line)
-      (let ((p (current-line)))
+      (let ((p (array-current-line)))
         (grid--fill-line (- width (string-pixel-width "…")))
         (let ((lines-count (count-lines 1 (point-max))))
-          (when (/= (current-line) p)
+          (when (/= (array-current-line) p)
             (goto-char 1)
             (forward-line (1+ p))
             (while (not (eobp)) (delete-line))
