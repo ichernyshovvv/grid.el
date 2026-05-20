@@ -73,6 +73,9 @@
    ((integerp width) width)
    (t (error "Wrong width format"))))
 
+(defun grid-generate-id ()
+  (intern (format "grid-%d" (cl-incf gensym-counter))))
+
 (defun grid--ensure-uuid (box)
   (let* ((content (plist-get box :content))
          (id-of-box-inside
@@ -80,7 +83,7 @@
             (insert content)
             (goto-char (point-min))
             (text-property-search-forward 'grid-box-uuid)))
-         (uuid (or id-of-box-inside (gensym "grid-"))))
+         (uuid (or id-of-box-inside (grid-generate-id))))
     (plist-put box :uuid uuid)
     (unless id-of-box-inside
       (setf (plist-get box :content)
